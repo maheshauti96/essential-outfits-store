@@ -1,0 +1,124 @@
+---
+import ProductCard from './ProductCard.astro';
+import { categories, type Category, type Product } from '../data/products';
+
+interface Props {
+  title: string;
+  intro: string;
+  items: Product[];
+  active?: Category['slug'];
+}
+
+const { title, intro, items, active } = Astro.props;
+---
+
+<section class="shop">
+  <div class="container">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="/">Home</a></li>
+        {active ? <li><a href="/shop/">Shop</a></li> : <li aria-current="page">Shop</li>}
+        {active && <li aria-current="page">{title}</li>}
+      </ol>
+    </nav>
+
+    <header class="shop-head">
+      <h1>{title}</h1>
+      <p class="lead">{intro}</p>
+    </header>
+
+    <nav class="chips" aria-label="Categories">
+      <a href="/shop/" aria-current={!active ? 'page' : undefined}>All</a>
+      {
+        categories.map((c) => (
+          <a href={`/shop/${c.slug}/`} aria-current={active === c.slug ? 'page' : undefined}>
+            {c.name}
+          </a>
+        ))
+      }
+    </nav>
+
+    <h2 class="visually-hidden">Products</h2>
+    <p class="count muted">{items.length} {items.length === 1 ? 'product' : 'products'}</p>
+
+    <div class="grid-products">
+      {items.map((p, i) => <ProductCard product={p} eager={i < 4} />)}
+    </div>
+  </div>
+</section>
+
+<style>
+  .shop {
+    padding-block: 24px clamp(56px, 8vw, 104px);
+  }
+
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    margin: 0 0 24px;
+    padding: 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+
+  .crumbs li + li::before {
+    content: '/';
+    margin-right: 6px;
+    color: var(--line);
+  }
+
+  .crumbs a {
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    text-decoration: underline;
+  }
+
+  .shop-head h1 {
+    font-size: clamp(2rem, 3vw + 1rem, 3.25rem);
+    margin-bottom: 8px;
+  }
+
+  .chips {
+    display: flex;
+    gap: 8px;
+    margin: 28px calc(var(--gutter) * -1) 0;
+    padding: 0 var(--gutter) 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chips a {
+    flex: none;
+    padding: 9px 16px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    background: var(--surface);
+  }
+
+  .chips a:hover {
+    border-color: var(--ink);
+  }
+
+  .chips a[aria-current='page'] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+  }
+
+  .count {
+    margin: 20px 0 20px;
+    font-size: 0.9rem;
+  }
+</style>

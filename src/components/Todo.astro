@@ -1,0 +1,9 @@
+---
+/**
+ * A highlighted "fill this in" note for the store owner. Shown only while
+ * `previewMode` is on in src/config.ts, so it never appears once you launch.
+ */
+import { site } from '../config';
+---
+
+{site.previewMode && <span class="todo">To fill in: <slot /></span>}

@@ -1,0 +1,44 @@
+---
+/**
+ * Local development only: shows the WhatsApp message that would be sent while
+ * no number is configured in src/config.ts.
+ */
+---
+
+<dialog class="preview-dialog" data-preview-dialog>
+  <h2>WhatsApp number not set</h2>
+  <p class="muted">
+    Add your number to <code>whatsappNumber</code> in <code>src/config.ts</code>. Until then, this is the message
+    customers would send:
+  </p>
+  <pre data-preview-text></pre>
+  <form method="dialog"><button class="btn btn-block">Close</button></form>
+</dialog>
+
+<style>
+  .preview-dialog {
+    width: min(520px, calc(100vw - 32px));
+    border: 0;
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: 0 20px 60px rgb(0 0 0 / 0.3);
+  }
+
+  .preview-dialog::backdrop {
+    background: rgb(25 24 22 / 0.5);
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  pre {
+    white-space: pre-wrap;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    font-size: 0.85rem;
+    max-height: 50vh;
+    overflow: auto;
+  }
+</style>

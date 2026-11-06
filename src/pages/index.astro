@@ -1,0 +1,388 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import Icon from '../components/Icon.astro';
+import { categories, products } from '../data/products';
+import { art, garmentImage } from '../lib/catalog';
+import { site, orderingEnabled } from '../config';
+import { whatsappUrl } from '../scripts/order';
+
+const featured = products.filter((p) => p.featured).slice(0, 8);
+const sizeHelpUrl = orderingEnabled
+  ? whatsappUrl(site.whatsappNumber, 'Hi Essential Outfits! Could you help me with sizing?')
+  : '/contact/';
+
+const steps = [
+  { icon: 'shirt', title: 'Pick your pieces', text: 'Choose colours and sizes and add them to your cart. No account needed.' },
+  { icon: 'chat', title: 'Send it on WhatsApp', text: 'Your cart becomes a ready-to-send WhatsApp message with every item, size and price.' },
+  { icon: 'truck', title: 'Confirm and receive', text: 'We confirm stock, delivery charges and payment with you on chat, then ship your order.' },
+] as const;
+---
+
+<BaseLayout>
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Menswear essentials</p>
+        <h1>The everyday wardrobe, <em>sorted.</em></h1>
+        <p class="lead">
+          Tees, polos, shirts, hoodies and trousers in easy fits and colours that work together. Choose your size here,
+          then order on WhatsApp.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-accent" href="/shop/">Shop the collection <Icon name="arrow" /></a>
+          <a class="btn btn-outline" href="#how-it-works">How ordering works</a>
+        </div>
+      </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <img class="art art-shirt" src={art.heroShirt} alt="" width="400" height="500" />
+        <img class="art art-pants" src={art.heroTrousers} alt="" width="400" height="500" />
+        <img class="art art-tee" src={art.heroTee} alt="" width="400" height="500" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section categories" aria-labelledby="cat-heading">
+    <div class="container">
+      <div class="section-head">
+        <h2 id="cat-heading">Shop by category</h2>
+        <a class="text-link" href="/shop/">View all</a>
+      </div>
+      <ul class="cat-list">
+        {
+          categories.map((c) => (
+            <li>
+              <a class="cat" href={`/shop/${c.slug}/`}>
+                <span class="cat-media">
+                  <img src={garmentImage(c.garment, c.color)} alt="" width="400" height="500" loading="lazy" />
+                </span>
+                <span class="cat-name">{c.name}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section featured" aria-labelledby="featured-heading">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">The core collection</p>
+          <h2 id="featured-heading">Pieces you'll wear on repeat</h2>
+        </div>
+        <a class="text-link" href="/shop/">Shop all</a>
+      </div>
+      <div class="grid-products featured-grid">
+        {featured.map((p) => <ProductCard product={p} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="manifesto">
+    <div class="container manifesto-inner">
+      <p class="eyebrow">Our idea</p>
+      <p class="manifesto-text">
+        Fewer, better basics. Clothes that fit well, go with everything else in your wardrobe, and look good every day.
+      </p>
+      <a class="text-link" href="/about/">About Essential Outfits</a>
+    </div>
+  </section>
+
+  <section class="section how" id="how-it-works" aria-labelledby="how-heading">
+    <div class="container">
+      <p class="eyebrow">How ordering works</p>
+      <h2 id="how-heading">Three steps, all on WhatsApp</h2>
+      <ol class="steps">
+        {
+          steps.map((s, i) => (
+            <li class="step">
+              <span class="step-icon">
+                <Icon name={s.icon} size={24} />
+              </span>
+              <span class="step-num">Step {i + 1}</span>
+              <h3>{s.title}</h3>
+              <p class="muted">{s.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="container">
+      <div class="cta-box">
+        <div>
+          <h2>Not sure about your size?</h2>
+          <p>Send us your usual size and how you like things to fit — we'll help you choose.</p>
+        </div>
+        <a
+          class:list={['btn', orderingEnabled ? 'btn-whatsapp' : 'btn-accent']}
+          href={sizeHelpUrl}
+          {...orderingEnabled && { target: '_blank', rel: 'noopener' }}
+        >
+          <Icon name="chat" />
+          {orderingEnabled ? 'Ask on WhatsApp' : 'Contact us'}
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: clamp(32px, 6vw, 80px) clamp(24px, 4vw, 48px);
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    display: grid;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .hero-art {
+    position: relative;
+    aspect-ratio: 6 / 5;
+    border-radius: calc(var(--radius) * 1.5);
+    background:
+      radial-gradient(120% 90% at 30% 20%, #f1ece4 0%, transparent 60%),
+      var(--media);
+  }
+
+  .art {
+    position: absolute;
+    width: 46%;
+    height: auto;
+  }
+
+  .art-shirt {
+    left: 4%;
+    top: 6%;
+    transform: rotate(-6deg);
+  }
+
+  .art-pants {
+    right: 2%;
+    top: 10%;
+    width: 40%;
+    transform: rotate(5deg);
+  }
+
+  .art-tee {
+    left: 30%;
+    top: 22%;
+    width: 44%;
+  }
+
+  @media (min-width: 900px) {
+    .hero-grid {
+      grid-template-columns: 1.05fr 1fr;
+      gap: 56px;
+    }
+  }
+
+  .section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .section-head h2 {
+    margin: 0;
+  }
+
+  .section-head .text-link {
+    white-space: nowrap;
+    margin-bottom: 6px;
+  }
+
+  .cat-list {
+    list-style: none;
+    margin: 0 calc(var(--gutter) * -1);
+    padding: 0 var(--gutter) 8px;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(150px, 42%);
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .cat-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cat-list li {
+    scroll-snap-align: start;
+  }
+
+  .cat {
+    display: grid;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .cat-media {
+    display: block;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius);
+    background: var(--media);
+    overflow: hidden;
+  }
+
+  .cat-media img {
+    width: 100%;
+    height: 100%;
+    padding: 10%;
+    transition: transform 0.4s ease;
+  }
+
+  .cat:hover .cat-media img {
+    transform: scale(1.05);
+  }
+
+  .cat-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  @media (min-width: 900px) {
+    .cat-list {
+      grid-auto-flow: row;
+      grid-template-columns: repeat(7, 1fr);
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+    }
+  }
+
+  .categories {
+    padding-top: clamp(32px, 5vw, 64px);
+  }
+
+  .featured {
+    padding-top: 0;
+  }
+
+  /* Keep the featured rows even on the 3-column layout. */
+  @media (min-width: 720px) and (max-width: 1079px) {
+    .featured-grid > :global(:nth-child(n + 7)) {
+      display: none;
+    }
+  }
+
+  .manifesto {
+    background: var(--accent);
+    color: #f1f4ef;
+    padding-block: clamp(64px, 9vw, 120px);
+  }
+
+  .manifesto-inner {
+    max-width: 960px;
+  }
+
+  .manifesto .eyebrow {
+    color: #b9cbb4;
+  }
+
+  .manifesto-text {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3vw + 1rem, 3.1rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-bottom: 28px;
+    font-variation-settings: 'opsz' 96;
+  }
+
+  .manifesto .text-link:hover {
+    color: #fff;
+  }
+
+  .steps {
+    list-style: none;
+    padding: 0;
+    margin: 36px 0 0;
+    display: grid;
+    gap: 20px;
+  }
+
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 28px;
+  }
+
+  .step-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+
+  .step-num {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .step p {
+    margin: 0;
+  }
+
+  @media (min-width: 820px) {
+    .steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .cta {
+    padding-bottom: clamp(56px, 8vw, 104px);
+  }
+
+  .cta-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: clamp(28px, 4vw, 48px);
+    border-radius: calc(var(--radius) * 1.5);
+    background: var(--media);
+  }
+
+  .cta h2 {
+    font-size: clamp(1.5rem, 2vw + 1rem, 2.25rem);
+    margin-bottom: 6px;
+  }
+
+  .cta p {
+    margin: 0;
+    color: var(--ink-2);
+  }
+</style>

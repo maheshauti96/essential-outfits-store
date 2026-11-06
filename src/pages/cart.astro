@@ -1,0 +1,479 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import OrderPreviewDialog from '../components/OrderPreviewDialog.astro';
+import { products } from '../data/products';
+import { absoluteUrl, imageFor, productUrl } from '../lib/catalog';
+import { site, orderingEnabled } from '../config';
+
+const isDev = import.meta.env.DEV;
+const whatsappLive = orderingEnabled || isDev;
+
+/** Slim copy of the catalogue so the cart can show current names, prices and images. */
+const catalog = Object.fromEntries(
+  products.map((p) => [
+    p.slug,
+    {
+      name: p.name,
+      price: p.price,
+      url: productUrl(p),
+      absoluteUrl: absoluteUrl(productUrl(p)),
+      soldOut: Boolean(p.soldOut),
+      images: Object.fromEntries(p.colors.map((c) => [c.name, imageFor(p, c)])),
+    },
+  ]),
+);
+---
+
+<BaseLayout title="Your cart" description="Review your cart and send your order on WhatsApp." noindex showChat={false}>
+  <section class="container cart" data-number={site.whatsappNumber}>
+    <h1>Your cart</h1>
+
+    <noscript>
+      <p class="lead">The cart needs JavaScript. Please enable it, or message us directly from the Contact page.</p>
+    </noscript>
+
+    <div class="empty" data-empty hidden>
+      <p class="lead">Your cart is empty.</p>
+      <a class="btn btn-accent" href="/shop/">Start shopping <Icon name="arrow" /></a>
+    </div>
+
+    <div class="cart-grid" data-filled hidden>
+      <div>
+        <ul class="lines" data-lines aria-label="Items in your cart"></ul>
+        <button class="clear" type="button" data-clear>Clear cart</button>
+      </div>
+
+      <aside class="summary" aria-labelledby="summary-heading">
+        <h2 id="summary-heading">Order summary</h2>
+        <dl>
+          <div><dt>Items</dt><dd data-item-count>0</dd></div>
+          <div><dt>Subtotal</dt><dd data-subtotal>₹0</dd></div>
+          <div><dt>Delivery</dt><dd class="muted">Confirmed on WhatsApp</dd></div>
+        </dl>
+
+        <form class="checkout" data-checkout novalidate>
+          <h3>Your details</h3>
+          <p class="muted small">Added to your WhatsApp message so we can quote delivery.</p>
+          <div class="field">
+            <label for="c-name">Name</label>
+            <input id="c-name" name="name" autocomplete="name" required maxlength="60" />
+          </div>
+          <div class="two">
+            <div class="field">
+              <label for="c-city">City</label>
+              <input id="c-city" name="city" autocomplete="address-level2" required maxlength="40" />
+            </div>
+            <div class="field">
+              <label for="c-pin">PIN code</label>
+              <input
+                id="c-pin"
+                name="pincode"
+                autocomplete="postal-code"
+                inputmode="numeric"
+                pattern="[1-9][0-9]{5}"
+                maxlength="6"
+                required
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label for="c-notes">Notes <span class="muted">(optional)</span></label>
+            <textarea id="c-notes" name="notes" rows="2" maxlength="300"></textarea>
+          </div>
+          <p class="error" data-form-error hidden></p>
+          <button class="btn btn-whatsapp btn-block" type="submit" disabled={!whatsappLive}>
+            <Icon name="chat" />
+            Send order on WhatsApp
+          </button>
+          {
+            whatsappLive ? (
+              <p class="muted small center">
+                Opens WhatsApp with your order filled in. Nothing is charged here — we'll confirm the total and payment
+                with you.
+              </p>
+            ) : (
+              <p class="muted small center">WhatsApp ordering opens soon.</p>
+            )
+          }
+        </form>
+
+        <div class="sent" data-sent hidden>
+          <p><strong>Order sent?</strong> We'll reply on WhatsApp to confirm. You can clear your cart once we've confirmed.</p>
+        </div>
+      </aside>
+    </div>
+
+    <template data-line-template>
+      <li class="line">
+        <a class="thumb" data-link tabindex="-1" aria-hidden="true"><img alt="" width="400" height="500" data-img /></a>
+        <div class="line-info">
+          <a class="line-name" data-link data-name></a>
+          <p class="muted small" data-variant></p>
+          <p class="small" data-unit></p>
+          <div class="line-controls">
+            <div class="qty">
+              <button type="button" data-dec><Icon name="minus" size={16} /></button>
+              <span data-qty aria-live="polite"></span>
+              <button type="button" data-inc><Icon name="plus" size={16} /></button>
+            </div>
+            <button class="remove" type="button" data-remove><Icon name="trash" size={18} /> <span>Remove</span></button>
+          </div>
+        </div>
+        <p class="line-total" data-total></p>
+      </li>
+    </template>
+  </section>
+
+  {isDev && <OrderPreviewDialog />}
+
+  <script type="application/json" id="catalog" set:html={JSON.stringify(catalog)} />
+</BaseLayout>
+
+<script>
+  import { getCart, setQty, clearCart, MAX_QTY, cartCount } from '../scripts/cart';
+  import { orderMessage, sendOrder, type OrderLine } from '../scripts/order';
+
+  type Catalog = Record<
+    string,
+    { name: string; price: number; url: string; absoluteUrl: string; soldOut: boolean; images: Record<string, string> }
+  >;
+
+  const catalog: Catalog = JSON.parse(document.getElementById('catalog')!.textContent || '{}');
+  const root = document.querySelector<HTMLElement>('.cart')!;
+  const list = root.querySelector<HTMLUListElement>('[data-lines]')!;
+  const template = root.querySelector<HTMLTemplateElement>('[data-line-template]')!;
+  const form = root.querySelector<HTMLFormElement>('[data-checkout]')!;
+  const formError = root.querySelector<HTMLElement>('[data-form-error]')!;
+  const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+
+  /** Cart lines joined with current catalogue data; drops products that no longer exist. */
+  function resolvedLines() {
+    return getCart()
+      .map((line, index) => ({ line, index, product: catalog[line.slug] }))
+      .filter((l) => l.product && l.product.images[l.line.color]);
+  }
+
+  function render() {
+    const lines = resolvedLines();
+    root.querySelector<HTMLElement>('[data-empty]')!.hidden = lines.length > 0;
+    root.querySelector<HTMLElement>('[data-filled]')!.hidden = lines.length === 0;
+
+    list.replaceChildren(
+      ...lines.map(({ line, index, product }) => {
+        const node = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+        const label = `${product!.name}, ${line.color}, size ${line.size}`;
+        node.querySelectorAll<HTMLAnchorElement>('[data-link]').forEach((a) => (a.href = product!.url));
+        node.querySelector<HTMLImageElement>('[data-img]')!.src = product!.images[line.color]!;
+        node.querySelector('[data-name]')!.textContent = product!.name;
+        node.querySelector('[data-variant]')!.textContent = `${line.color} · Size ${line.size}`;
+        node.querySelector('[data-unit]')!.textContent = product!.soldOut ? 'Sold out' : `${inr.format(product!.price)} each`;
+        node.querySelector('[data-qty]')!.textContent = String(line.qty);
+        node.querySelector('[data-total]')!.textContent = inr.format(product!.price * line.qty);
+
+        const dec = node.querySelector<HTMLButtonElement>('[data-dec]')!;
+        const inc = node.querySelector<HTMLButtonElement>('[data-inc]')!;
+        dec.setAttribute('aria-label', `Decrease quantity of ${label}`);
+        inc.setAttribute('aria-label', `Increase quantity of ${label}`);
+        inc.disabled = line.qty >= MAX_QTY;
+        dec.addEventListener('click', () => setQty(index, line.qty - 1));
+        inc.addEventListener('click', () => setQty(index, line.qty + 1));
+
+        const remove = node.querySelector<HTMLButtonElement>('[data-remove]')!;
+        remove.setAttribute('aria-label', `Remove ${label}`);
+        remove.addEventListener('click', () => setQty(index, 0));
+        return node;
+      }),
+    );
+
+    const subtotal = lines.reduce((sum, l) => sum + l.product!.price * l.line.qty, 0);
+    root.querySelector('[data-item-count]')!.textContent = String(cartCount(lines.map((l) => l.line)));
+    root.querySelector('[data-subtotal]')!.textContent = inr.format(subtotal);
+  }
+
+  root.querySelector('[data-clear]')!.addEventListener('click', () => {
+    if (confirm('Remove everything from your cart?')) clearCart();
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    formError.hidden = true;
+
+    const invalid = [...form.querySelectorAll<HTMLInputElement>('input')].find((i) => !i.checkValidity());
+    if (invalid) {
+      formError.textContent =
+        invalid.name === 'pincode' && invalid.value ? 'Please enter a valid 6-digit PIN code.' : 'Please fill in your name, city and PIN code.';
+      formError.hidden = false;
+      invalid.focus();
+      return;
+    }
+
+    const lines = resolvedLines();
+    const soldOut = lines.find((l) => l.product!.soldOut);
+    if (soldOut) {
+      formError.textContent = `${soldOut.product!.name} is sold out — please remove it first.`;
+      formError.hidden = false;
+      return;
+    }
+
+    const data = new FormData(form);
+    const orderLines: OrderLine[] = lines.map(({ line, product }) => ({
+      name: product!.name,
+      color: line.color,
+      size: line.size,
+      qty: line.qty,
+      price: product!.price,
+      url: product!.absoluteUrl,
+    }));
+    const message = orderMessage(orderLines, {
+      name: String(data.get('name') || '').trim(),
+      city: String(data.get('city') || '').trim(),
+      pincode: String(data.get('pincode') || '').trim(),
+      notes: String(data.get('notes') || '').trim(),
+    });
+
+    if (sendOrder(root.dataset.number, message)) {
+      root.querySelector<HTMLElement>('[data-sent]')!.hidden = false;
+    }
+  });
+
+  render();
+  window.addEventListener('cart:change', render);
+  window.addEventListener('storage', render);
+</script>
+
+<style>
+  .cart {
+    padding-block: 32px clamp(56px, 8vw, 104px);
+  }
+
+  .cart h1 {
+    font-size: clamp(2rem, 3vw + 1rem, 3rem);
+  }
+
+  .empty {
+    padding: 48px 0 24px;
+  }
+
+  .cart-grid {
+    display: grid;
+    gap: 32px;
+    margin-top: 8px;
+  }
+
+  .cart-grid[hidden],
+  .empty[hidden] {
+    display: none;
+  }
+
+  @media (min-width: 960px) {
+    .cart-grid {
+      grid-template-columns: 1fr 400px;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .summary {
+      position: sticky;
+      top: calc(var(--header-h) + 24px);
+    }
+  }
+
+  .lines {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .line {
+    display: grid;
+    grid-template-columns: 96px 1fr auto;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .thumb {
+    display: block;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-sm);
+    background: var(--media);
+    overflow: hidden;
+  }
+
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    padding: 6%;
+  }
+
+  .line-info p {
+    margin: 2px 0 0;
+  }
+
+  .line-name {
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .line-name:hover {
+    text-decoration: underline;
+  }
+
+  .line-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    margin-top: 12px;
+  }
+
+  .qty {
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+
+  .qty button {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .qty button:hover:not(:disabled) {
+    background: rgb(25 24 22 / 0.06);
+  }
+
+  .qty button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .qty span {
+    min-width: 28px;
+    text-align: center;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .remove,
+  .clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    background: none;
+    padding: 6px 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+
+  .remove:hover,
+  .clear:hover {
+    color: var(--danger);
+  }
+
+  .clear {
+    margin-top: 12px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .line-total {
+    margin: 0;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  .summary h2 {
+    font-size: 1.5rem;
+  }
+
+  dl {
+    margin: 0;
+    display: grid;
+    gap: 10px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  dl div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  dt {
+    color: var(--ink-2);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .checkout {
+    display: grid;
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  .checkout h3 {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .small {
+    font-size: 0.86rem;
+    margin: 0;
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .error {
+    margin: 0;
+    color: var(--danger);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .sent {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    font-size: 0.92rem;
+  }
+
+  .sent p {
+    margin: 0;
+  }
+</style>

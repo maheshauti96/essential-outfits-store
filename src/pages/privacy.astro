@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Todo from '../components/Todo.astro';
+import { site } from '../config';
+
+const owner = site.legalName || site.name;
+---
+
+<BaseLayout title="Privacy policy" description="How Essential Outfits handles your information.">
+  <div class="container page">
+    <PageHeader eyebrow="Legal" title="Privacy policy" />
+
+    <div class="prose">
+      <p class="muted">Last updated: 6 November 2026</p>
+      <p>
+        This policy explains what information {owner} ("we", "us") handles when you use essentialoutfits.store and order
+        from us.
+      </p>
+
+      <h2>What this website stores</h2>
+      <ul>
+        <li>
+          <strong>Your cart</strong> is saved in your own browser (local storage) so it's still there when you come back.
+          It never leaves your device unless you send an order.
+        </li>
+        <li>
+          <strong>Checkout details</strong> you type in (name, city, PIN code, notes) are only used to write your WhatsApp
+          message. This website doesn't send them to us or store them anywhere.
+        </li>
+        <li>We don't use advertising or analytics cookies on this website.</li>
+      </ul>
+
+      <h2>When you order on WhatsApp</h2>
+      <p>
+        When you send us an order or message, we receive what you share on WhatsApp — such as your name, phone number,
+        delivery address and order details. We use this only to process and deliver your order and to talk to you about
+        it. WhatsApp's own privacy policy also applies to messages sent through it.
+      </p>
+      <p>
+        We share your delivery details with our courier partner so they can deliver your order. We don't sell your
+        information.
+      </p>
+
+      <h2>Hosting</h2>
+      <p>
+        This website is hosted on GitHub Pages. Like most web hosts, GitHub may record technical information such as your
+        IP address for security purposes.
+      </p>
+
+      <h2>Your choices</h2>
+      <p>
+        You can clear your cart at any time from the cart page or by clearing your browser data. To ask us what
+        information we hold about you, or to have it deleted, contact us from our <a href="/contact/">contact page</a>.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        {owner}{site.address && `, ${site.address}`}.
+        <Todo>your legal business name and address in src/config.ts, and a grievance contact if required.</Todo>
+      </p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-bottom: clamp(56px, 8vw, 104px);
+  }
+</style>

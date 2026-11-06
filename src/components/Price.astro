@@ -1,0 +1,52 @@
+---
+import { formatPrice } from '../lib/catalog';
+
+interface Props {
+  price: number;
+  compareAt?: number;
+  size?: 'sm' | 'lg';
+}
+
+const { price, compareAt, size = 'sm' } = Astro.props;
+const onSale = compareAt !== undefined && compareAt > price;
+---
+
+<p class:list={['price', size]}>
+  <span class="visually-hidden">{onSale ? 'Sale price' : 'Price'}</span>
+  <span class:list={{ now: true, sale: onSale }}>{formatPrice(price)}</span>
+  {
+    onSale && (
+      <>
+        <span class="visually-hidden">Original price</span>
+        <s class="was">{formatPrice(compareAt)}</s>
+      </>
+    )
+  }
+</p>
+
+<style>
+  .price {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .now {
+    font-weight: 600;
+  }
+
+  .sale {
+    color: var(--rust);
+  }
+
+  .was {
+    color: var(--muted);
+    font-size: 0.9em;
+  }
+
+  .lg {
+    font-size: 1.35rem;
+  }
+</style>

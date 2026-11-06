@@ -1,0 +1,179 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Icon from '../components/Icon.astro';
+import { site, orderingEnabled } from '../config';
+import { absoluteUrl } from '../lib/catalog';
+import { whatsappUrl } from '../scripts/order';
+
+interface Props {
+  /** Page title without the site name. Leave empty on the home page. */
+  title?: string;
+  description?: string;
+  /** Path or absolute URL of the social share image. */
+  image?: string;
+  type?: 'website' | 'product';
+  noindex?: boolean;
+  /** Structured data objects, rendered as JSON-LD. */
+  jsonLd?: Record<string, unknown>[];
+  /** Floating WhatsApp chat button. Off on pages that have their own WhatsApp buttons. */
+  showChat?: boolean;
+}
+
+const {
+  title,
+  description = site.description,
+  image = '/og.png',
+  type = 'website',
+  noindex = false,
+  jsonLd = [],
+  showChat = true,
+} = Astro.props;
+
+const fullTitle = title ? `${title} | ${site.name}` : `${site.name} — ${site.tagline}`;
+// Keep search engines out while the catalogue is a preview, so sample prices
+// never show up in Google. Turning previewMode off opens the site to indexing.
+const hideFromSearch = noindex || site.previewMode;
+const canonical = absoluteUrl(Astro.url.pathname);
+const ogImage = absoluteUrl(image);
+const chatUrl = orderingEnabled && showChat ? whatsappUrl(site.whatsappNumber, 'Hi Essential Outfits! I have a question.') : null;
+
+const organization = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: site.name,
+  url: site.url,
+  logo: absoluteUrl('/icon-512.png'),
+  ...(site.email && { email: site.email }),
+  ...(site.instagram && { sameAs: [`https://instagram.com/${site.instagram}`] }),
+};
+---
+
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {hideFromSearch && <meta name="robots" content="noindex" />}
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#f6f3ee" />
+
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:type" content={type === 'product' ? 'product' : 'website'} />
+    <meta property="og:title" content={title ?? site.name} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="en_IN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title ?? site.name} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(organization)} />
+    {jsonLd.map((d) => <script type="application/ld+json" set:html={JSON.stringify(d)} />)}
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    {
+      site.previewMode && (
+        <div class="preview-banner" role="note">
+          Store preview — the products and prices shown are samples.
+        </div>
+      )
+    }
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+
+    {
+      chatUrl && (
+        <a class="chat-fab" href={chatUrl} target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp">
+          <Icon name="chat" size={26} />
+        </a>
+      )
+    }
+
+    <div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+  </body>
+</html>
+
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .preview-banner {
+    background: var(--accent);
+    color: #f1f4ef;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 7px var(--gutter);
+  }
+
+  .chat-fab {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--whatsapp);
+    color: #fff;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.2);
+  }
+
+  .chat-fab:hover {
+    background: var(--whatsapp-hover);
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 60;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 12px 14px 12px 18px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 0.95rem;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+  }
+
+  .toast[hidden] {
+    display: none;
+  }
+
+  .toast :global(a) {
+    color: #fff;
+    font-weight: 600;
+    background: rgb(255 255 255 / 0.14);
+    padding: 6px 12px;
+    border-radius: 999px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+</style>

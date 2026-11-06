@@ -1,0 +1,629 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import Price from '../../components/Price.astro';
+import Icon from '../../components/Icon.astro';
+import OrderPreviewDialog from '../../components/OrderPreviewDialog.astro';
+import { products, getCategory, type Product } from '../../data/products';
+import { absoluteUrl, imageFor, productUrl } from '../../lib/catalog';
+import { site, orderingEnabled } from '../../config';
+import { whatsappUrl } from '../../scripts/order';
+
+export const getStaticPaths = (() => products.map((product) => ({ params: { slug: product.slug }, props: { product } }))) satisfies GetStaticPaths;
+
+const { product } = Astro.props as { product: Product };
+const category = getCategory(product.category)!;
+const firstColor = product.colors[0]!;
+
+const related = [
+  ...products.filter((p) => p.category === product.category && p.slug !== product.slug),
+  ...products.filter((p) => p.featured && p.category !== product.category),
+].slice(0, 4);
+
+const isDev = import.meta.env.DEV;
+const canOrder = !product.soldOut;
+// On the live site the WhatsApp button stays off until a number is configured.
+// In local development it opens a preview of the message instead.
+const whatsappLive = orderingEnabled || isDev;
+const sizeHelpUrl = orderingEnabled
+  ? whatsappUrl(site.whatsappNumber, `Hi Essential Outfits! Which size should I pick for the ${product.name}?`)
+  : '/contact/';
+
+const productLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.name,
+  description: product.summary,
+  sku: product.slug,
+  image: product.colors.map((c) => absoluteUrl(imageFor(product, c))),
+  brand: { '@type': 'Brand', name: site.name },
+  category: category.name,
+  color: product.colors.map((c) => c.name).join(', '),
+  offers: {
+    '@type': 'Offer',
+    url: absoluteUrl(productUrl(product)),
+    priceCurrency: site.currency,
+    price: product.price,
+    availability: product.soldOut ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+    itemCondition: 'https://schema.org/NewCondition',
+  },
+};
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Shop', item: absoluteUrl('/shop/') },
+    { '@type': 'ListItem', position: 2, name: category.name, item: absoluteUrl(`/shop/${category.slug}/`) },
+    { '@type': 'ListItem', position: 3, name: product.name, item: absoluteUrl(productUrl(product)) },
+  ],
+};
+---
+
+<BaseLayout
+  title={product.name}
+  description={`${product.summary} ${product.colors.length} colours, sizes ${product.sizes[0]}–${product.sizes.at(-1)}.`}
+  image={imageFor(product).endsWith('.svg') ? undefined : imageFor(product)}
+  type="product"
+  jsonLd={[productLd, breadcrumbs]}
+  showChat={false}
+>
+  <div class="container pdp">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="/shop/">Shop</a></li>
+        <li><a href={`/shop/${category.slug}/`}>{category.name}</a></li>
+        <li aria-current="page">{product.name}</li>
+      </ol>
+    </nav>
+
+    <div class="pdp-grid">
+      <div class="gallery">
+        {
+          product.colors.map((c, i) => (
+            <img
+              src={imageFor(product, c)}
+              alt={`${product.name} in ${c.name}`}
+              width="400"
+              height="500"
+              loading={i === 0 ? 'eager' : 'lazy'}
+              fetchpriority={i === 0 ? 'high' : undefined}
+              data-color-image={c.name}
+              hidden={i !== 0}
+            />
+          ))
+        }
+        {product.soldOut && <span class="badge">Sold out</span>}
+      </div>
+
+      <div class="info">
+        <p class="eyebrow">{category.name}</p>
+        <h1>{product.name}</h1>
+        <Price price={product.price} compareAt={product.compareAtPrice} size="lg" />
+        <p class="summary">{product.summary}</p>
+
+        <form
+          class="buy"
+          data-buy-form
+          data-slug={product.slug}
+          data-name={product.name}
+          data-price={product.price}
+          data-url={absoluteUrl(productUrl(product))}
+          data-number={site.whatsappNumber}
+          novalidate
+        >
+          <fieldset>
+            <legend>Colour: <span data-color-name>{firstColor.name}</span></legend>
+            <div class="swatches">
+              {
+                product.colors.map((c, i) => (
+                  <label class="swatch" title={c.name}>
+                    <input type="radio" name="color" value={c.name} checked={i === 0} />
+                    <span class="swatch-dot" style={`--c:${c.hex}`} />
+                    <span class="visually-hidden">{c.name}</span>
+                  </label>
+                ))
+              }
+            </div>
+          </fieldset>
+
+          <fieldset aria-describedby="size-error">
+            <legend>Size</legend>
+            <div class="sizes">
+              {
+                product.sizes.map((s) => (
+                  <label class="size">
+                    <input type="radio" name="size" value={s} required />
+                    <span>{s}</span>
+                  </label>
+                ))
+              }
+            </div>
+            <p class="error" id="size-error" data-size-error hidden>Please choose a size.</p>
+            <a class="size-help" href={sizeHelpUrl} {...orderingEnabled && { target: '_blank', rel: 'noopener' }}>
+              Not sure? Ask us about sizing
+            </a>
+          </fieldset>
+
+          <div class="qty-row">
+            <label for="qty" class="qty-label">Quantity</label>
+            <div class="qty">
+              <button type="button" data-qty-step="-1" aria-label="Decrease quantity"><Icon name="minus" size={18} /></button>
+              <input id="qty" name="qty" type="number" inputmode="numeric" min="1" max="10" value="1" />
+              <button type="button" data-qty-step="1" aria-label="Increase quantity"><Icon name="plus" size={18} /></button>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-accent btn-block" type="submit" disabled={!canOrder}>
+              <Icon name="bag" />
+              {canOrder ? 'Add to cart' : 'Sold out'}
+            </button>
+            <button
+              class="btn btn-whatsapp btn-block"
+              type="button"
+              data-whatsapp-buy
+              disabled={!canOrder || !whatsappLive}
+            >
+              <Icon name="chat" />
+              Order on WhatsApp
+            </button>
+            {!orderingEnabled && !isDev && <p class="note muted">WhatsApp ordering opens soon.</p>}
+          </div>
+        </form>
+
+        <div class="more">
+          <details open>
+            <summary>Details <Icon name="chevron" size={18} /></summary>
+            <ul>
+              {product.details.map((d) => <li>{d}</li>)}
+            </ul>
+          </details>
+          <details>
+            <summary>Delivery &amp; returns <Icon name="chevron" size={18} /></summary>
+            <p>
+              We confirm delivery charges and timing with you on WhatsApp before you pay. See our <a
+                href="/shipping-returns/">shipping &amp; returns policy</a
+              >.
+            </p>
+          </details>
+          <details>
+            <summary>How ordering works <Icon name="chevron" size={18} /></summary>
+            <p>
+              Add items to your cart, then send the order to us on WhatsApp. We'll confirm stock, delivery and payment
+              details with you before anything is shipped.
+            </p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {
+    related.length > 0 && (
+      <section class="related" aria-labelledby="related-heading">
+        <div class="container">
+          <h2 id="related-heading">You may also like</h2>
+          <div class="grid-products">
+            {related.map((p) => (
+              <ProductCard product={p} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {isDev && <OrderPreviewDialog />}
+</BaseLayout>
+
+<script>
+  import { addToCart, MAX_QTY } from '../../scripts/cart';
+  import { orderMessage, sendOrder } from '../../scripts/order';
+
+  const form = document.querySelector<HTMLFormElement>('[data-buy-form]')!;
+  const qtyInput = form.querySelector<HTMLInputElement>('#qty')!;
+  const sizeError = form.querySelector<HTMLElement>('[data-size-error]')!;
+  const colorName = form.querySelector<HTMLElement>('[data-color-name]')!;
+  const toast = document.querySelector<HTMLElement>('[data-toast]')!;
+  let toastTimer: number | undefined;
+
+  const selected = (name: string) => form.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value;
+
+  const clampQty = () => {
+    const n = Math.round(Number(qtyInput.value) || 1);
+    qtyInput.value = String(Math.min(MAX_QTY, Math.max(1, n)));
+    return Number(qtyInput.value);
+  };
+
+  // Colour: swap the main image and the label.
+  form.querySelectorAll<HTMLInputElement>('input[name="color"]').forEach((input) =>
+    input.addEventListener('change', () => {
+      colorName.textContent = input.value;
+      document.querySelectorAll<HTMLImageElement>('[data-color-image]').forEach((img) => {
+        img.hidden = img.dataset.colorImage !== input.value;
+      });
+    }),
+  );
+
+  form.querySelectorAll<HTMLInputElement>('input[name="size"]').forEach((input) =>
+    input.addEventListener('change', () => (sizeError.hidden = true)),
+  );
+
+  form.querySelectorAll<HTMLButtonElement>('[data-qty-step]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      qtyInput.value = String(Number(qtyInput.value) + Number(btn.dataset.qtyStep));
+      clampQty();
+    }),
+  );
+  qtyInput.addEventListener('change', clampQty);
+
+  function requireSize(): string | undefined {
+    const size = selected('size');
+    if (!size) {
+      sizeError.hidden = false;
+      form.querySelector<HTMLInputElement>('input[name="size"]')?.focus();
+    }
+    return size;
+  }
+
+  function showToast(html: string) {
+    toast.innerHTML = html;
+    toast.hidden = false;
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => (toast.hidden = true), 4000);
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const size = requireSize();
+    if (!size) return;
+    addToCart({ slug: form.dataset.slug!, color: selected('color')!, size, qty: clampQty() });
+    showToast('<span>Added to your cart</span><a href="/cart/">View cart</a>');
+  });
+
+  form.querySelector<HTMLButtonElement>('[data-whatsapp-buy]')?.addEventListener('click', () => {
+    const size = requireSize();
+    if (!size) return;
+    const message = orderMessage([
+      {
+        name: form.dataset.name!,
+        color: selected('color')!,
+        size,
+        qty: clampQty(),
+        price: Number(form.dataset.price),
+        url: form.dataset.url!,
+      },
+    ]);
+    sendOrder(form.dataset.number, message);
+  });
+</script>
+
+<style>
+  .pdp {
+    padding-block: 24px clamp(48px, 6vw, 80px);
+  }
+
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    margin: 0 0 20px;
+    padding: 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+
+  .crumbs li + li::before {
+    content: '/';
+    margin-right: 6px;
+    color: var(--line);
+  }
+
+  .crumbs a {
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    text-decoration: underline;
+  }
+
+  .pdp-grid {
+    display: grid;
+    gap: 32px;
+  }
+
+  @media (min-width: 900px) {
+    .pdp-grid {
+      grid-template-columns: 1.1fr 1fr;
+      gap: 56px;
+      align-items: start;
+    }
+
+    .info {
+      position: sticky;
+      top: calc(var(--header-h) + 24px);
+    }
+  }
+
+  .gallery {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    border-radius: calc(var(--radius) * 1.25);
+    background:
+      radial-gradient(100% 80% at 30% 15%, #f1ece4 0%, transparent 65%),
+      var(--media);
+    overflow: hidden;
+  }
+
+  .gallery img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    padding: 7%;
+  }
+
+  .gallery img[hidden] {
+    display: none;
+  }
+
+  .badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .info h1 {
+    font-size: clamp(2rem, 2.5vw + 1rem, 2.9rem);
+    margin-bottom: 10px;
+  }
+
+  .summary {
+    margin: 18px 0 8px;
+    color: var(--ink-2);
+  }
+
+  .buy {
+    display: grid;
+    gap: 22px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+
+  fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+
+  legend {
+    padding: 0;
+    margin-bottom: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  legend span {
+    font-weight: 400;
+    color: var(--ink-2);
+  }
+
+  .swatches,
+  .sizes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .swatch,
+  .size {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .swatch input,
+  .size input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .swatch-dot {
+    display: block;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow:
+      inset 0 0 0 1px rgb(0 0 0 / 0.15),
+      0 0 0 3px var(--bg),
+      0 0 0 4px transparent;
+    transition: box-shadow 0.15s;
+  }
+
+  .swatch:hover .swatch-dot {
+    box-shadow:
+      inset 0 0 0 1px rgb(0 0 0 / 0.15),
+      0 0 0 3px var(--bg),
+      0 0 0 4px var(--line);
+  }
+
+  .swatch input:checked + .swatch-dot {
+    box-shadow:
+      inset 0 0 0 1px rgb(0 0 0 / 0.15),
+      0 0 0 3px var(--bg),
+      0 0 0 5px var(--ink);
+  }
+
+  .swatch input:focus-visible + .swatch-dot,
+  .size input:focus-visible + span {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .size span {
+    display: grid;
+    place-items: center;
+    min-width: 54px;
+    height: 46px;
+    padding: 0 12px;
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-weight: 600;
+    font-size: 0.92rem;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .size:hover span {
+    border-color: var(--ink);
+  }
+
+  .size input:checked + span {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+  }
+
+  .error {
+    margin: 10px 0 0;
+    color: var(--danger);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .size-help {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: var(--ink-2);
+    text-underline-offset: 3px;
+  }
+
+  .qty-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .qty-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .qty {
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+
+  .qty button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .qty button:hover {
+    background: rgb(25 24 22 / 0.06);
+  }
+
+  .qty input {
+    width: 44px;
+    border: 0;
+    background: transparent;
+    text-align: center;
+    font-weight: 600;
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  .qty input::-webkit-inner-spin-button,
+  .qty input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .note {
+    margin: 0;
+    text-align: center;
+    font-size: 0.88rem;
+  }
+
+  .more {
+    margin-top: 32px;
+    border-top: 1px solid var(--line);
+  }
+
+  details {
+    border-bottom: 1px solid var(--line);
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary :global(svg) {
+    transition: transform 0.2s;
+  }
+
+  details[open] summary :global(svg) {
+    transform: rotate(180deg);
+  }
+
+  details ul,
+  details p {
+    margin: 0 0 18px;
+    color: var(--ink-2);
+  }
+
+  details ul {
+    padding-left: 1.2em;
+  }
+
+  details a {
+    text-underline-offset: 3px;
+  }
+
+  .related {
+    padding-bottom: clamp(56px, 8vw, 104px);
+  }
+
+  .related h2 {
+    font-size: clamp(1.5rem, 2vw + 1rem, 2.25rem);
+    margin-bottom: 28px;
+  }
+</style>

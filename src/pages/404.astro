@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { art } from '../lib/catalog';
+---
+
+<BaseLayout title="Page not found" noindex>
+  <div class="container nf">
+    <img src={art.notFound} alt="" width="400" height="500" />
+    <div>
+      <p class="eyebrow">404</p>
+      <h1>We couldn't find that page.</h1>
+      <p class="lead">It may have moved, or the link might be wrong.</p>
+      <div class="actions">
+        <a class="btn btn-accent" href="/shop/">Go to the shop <Icon name="arrow" /></a>
+        <a class="btn btn-outline" href="/">Home</a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .nf {
+    display: grid;
+    gap: 32px;
+    align-items: center;
+    padding-block: clamp(48px, 8vw, 112px);
+  }
+
+  .nf img {
+    width: min(260px, 60vw);
+    height: auto;
+    background: var(--media);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  @media (min-width: 820px) {
+    .nf {
+      grid-template-columns: auto 1fr;
+      gap: 64px;
+    }
+  }
+</style>
