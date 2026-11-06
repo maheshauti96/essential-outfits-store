@@ -1,0 +1,93 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { looks } from '../data/looks';
+import { productUrl } from '../lib/catalog';
+import { getProduct } from '../data/products';
+
+const shirt = getProduct('the-essential-shirt')!;
+const trousers = getProduct('the-essential-trousers')!;
+---
+
+<BaseLayout
+  title="Style Combinations"
+  description="Effortless shirt and trouser pairings for campus, office and the weekend."
+>
+  <header class="page-head">
+    <p class="eyebrow gold">Lookbook</p>
+    <h1>STYLE COMBINATIONS</h1>
+    <p class="lede">Effortless pairings for campus, office and the weekend.</p>
+  </header>
+  <div class="container looks">
+    {
+      looks.map((look) => (
+        <article>
+          <div class="frame">
+            <img src={look.image} alt={look.title} width="800" height="1008" loading="lazy" />
+          </div>
+          <h2>{look.title}</h2>
+          <div class="links">
+            <a href={productUrl(shirt, look.shirt)}>Shop shirt</a>
+            <a href={productUrl(trousers, look.bottom)}>Shop bottom</a>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .looks {
+    display: grid;
+    gap: 56px 24px;
+    padding-bottom: 96px;
+  }
+
+  @media (min-width: 640px) {
+    .looks {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .looks {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .frame {
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--muted);
+  }
+
+  .frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  h2 {
+    margin-top: 16px;
+    font-size: 1.7rem;
+  }
+
+  .links {
+    display: flex;
+    gap: 20px;
+    margin-top: 12px;
+  }
+
+  .links a {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--fg);
+    padding-bottom: 4px;
+  }
+
+  .links a:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+</style>

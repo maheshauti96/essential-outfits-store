@@ -72,7 +72,7 @@ export function watchCartCount() {
       el.hidden = n === 0;
     });
     document.querySelectorAll<HTMLElement>('[data-cart-label]').forEach((el) => {
-      el.setAttribute('aria-label', n ? `Cart, ${n} item${n === 1 ? '' : 's'}` : 'Cart, empty');
+      el.setAttribute('aria-label', n ? `Open cart, ${n} item${n === 1 ? '' : 's'}` : 'Open cart');
     });
   };
   update();

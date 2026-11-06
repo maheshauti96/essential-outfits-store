@@ -2,6 +2,7 @@
  * Builds the WhatsApp order message. Shared by the cart page and the
  * "Order on WhatsApp" button on product pages.
  */
+import { formatPrice } from '../lib/catalog';
 export interface OrderLine {
   name: string;
   color: string;
@@ -18,13 +19,11 @@ export interface Customer {
   notes?: string;
 }
 
-const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
-
 export function orderMessage(lines: OrderLine[], customer: Customer = {}): string {
   const total = lines.reduce((sum, l) => sum + l.price * l.qty, 0);
   const items = lines.map(
     (l, i) =>
-      `${i + 1}. ${l.name}\n   Colour: ${l.color} · Size: ${l.size} · Qty: ${l.qty}\n   ${inr.format(l.price * l.qty)}\n   ${l.url}`,
+      `${i + 1}. ${l.name}\n   Colour: ${l.color}\n   Size: ${l.size}\n   Quantity: ${l.qty}\n   Price: ${formatPrice(l.price * l.qty)}`,
   );
   const who = [
     customer.name && `Name: ${customer.name}`,
@@ -34,14 +33,12 @@ export function orderMessage(lines: OrderLine[], customer: Customer = {}): strin
   ].filter(Boolean);
 
   return [
-    'Hi Essential Outfits! I would like to order:',
+    "Hello Essential Outfits, I'd like to place an order:",
     '',
     ...items,
     '',
-    `Subtotal: ${inr.format(total)}`,
-    ...(who.length ? ['', ...who] : []),
-    '',
-    'Please confirm availability, delivery charges and payment details.',
+    `Total: ${formatPrice(total)}`,
+    ...(who.length ? ['', ...who, '', 'Please confirm availability and payment.'] : []),
   ].join('\n');
 }
 

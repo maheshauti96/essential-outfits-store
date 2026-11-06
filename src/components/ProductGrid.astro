@@ -1,0 +1,17 @@
+---
+import ColorCard from './ColorCard.astro';
+import { productByCategory, type CategorySlug } from '../data/products';
+
+interface Props {
+  category: CategorySlug;
+  limit?: number;
+}
+
+const { category, limit } = Astro.props;
+const product = productByCategory(category);
+const colors = limit ? product.colors.slice(0, limit) : product.colors;
+---
+
+<div class="grid-products">
+  {colors.map((color) => <ColorCard product={product} color={color} />)}
+</div>

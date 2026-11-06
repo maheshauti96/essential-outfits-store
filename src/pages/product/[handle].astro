@@ -1,0 +1,517 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { products, getCategory, type Product } from '../../data/products';
+import { absoluteUrl, colorLabel, formatPrice, productUrl } from '../../lib/catalog';
+import { phoneDisplay, site } from '../../config';
+
+export const getStaticPaths = (() =>
+  products.map((product) => ({ params: { handle: product.slug }, props: { product } }))) satisfies GetStaticPaths;
+
+const { product } = Astro.props as { product: Product };
+const category = getCategory(product.category)!;
+const first = product.colors[0]!;
+const label = colorLabel(product.category, first.name);
+
+const productLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.name,
+  description: product.summary,
+  sku: product.slug,
+  image: product.colors.map((c) => absoluteUrl(c.image)),
+  brand: { '@type': 'Brand', name: site.name },
+  category: category.name,
+  color: product.colors.map((c) => c.name).join(', '),
+  offers: {
+    '@type': 'Offer',
+    url: absoluteUrl(productUrl(product)),
+    priceCurrency: site.currency,
+    price: product.price,
+    availability: 'https://schema.org/InStock',
+    itemCondition: 'https://schema.org/NewCondition',
+  },
+};
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
+    { '@type': 'ListItem', position: 2, name: category.name, item: absoluteUrl(`/${category.slug}/`) },
+    { '@type': 'ListItem', position: 3, name: product.name, item: absoluteUrl(productUrl(product)) },
+  ],
+};
+---
+
+<BaseLayout
+  title={product.name}
+  description={product.summary}
+  image={first.image}
+  type="product"
+  jsonLd={[productLd, breadcrumbs]}
+>
+  <div
+    class="container pdp"
+    id="pdp"
+    data-slug={product.slug}
+    data-price={product.price}
+    data-category={product.category}
+    data-active={first.name}
+  >
+    <nav class="crumbs eyebrow" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      <span aria-hidden="true"> / </span>
+      <a href={`/${category.slug}/`}>{category.name}</a>
+      <span aria-hidden="true"> / </span>
+      <span class="crumb-current" data-crumb>{label}</span>
+    </nav>
+
+    <div class="pdp-grid">
+      <div class="gallery">
+        <div class="stage">
+          <img data-main src={first.image} alt={label} width="800" height="1008" />
+        </div>
+        <div class="thumbs">
+          {
+            product.colors.map((color) => (
+              <button
+                type="button"
+                class:list={['thumb', { 'is-selected': color.name === first.name }]}
+                data-thumb
+                data-color={color.name}
+                data-image={color.image}
+                data-label={colorLabel(product.category, color.name)}
+                aria-label={color.name}
+                aria-pressed={color.name === first.name ? 'true' : 'false'}
+              >
+                <img src={color.image} alt="" width="160" height="200" loading="lazy" />
+              </button>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="buy">
+        <p class="eyebrow gold">{product.name}</p>
+        <h1 data-title>{label}</h1>
+        <p class="price">{formatPrice(product.price)}</p>
+        <p class="tax">Inclusive of all taxes</p>
+
+        <div class="option">
+          <p class="eyebrow">Colour — <span class="muted" data-colour-label>{first.name}</span></p>
+          <div class="chips" role="group" aria-label="Colour">
+            {
+              product.colors.map((color) => (
+                <button
+                  type="button"
+                  class:list={['chip', { 'is-selected': color.name === first.name }]}
+                  data-color={color.name}
+                  data-image={color.image}
+                  data-label={colorLabel(product.category, color.name)}
+                  aria-pressed={color.name === first.name ? 'true' : 'false'}
+                >
+                  {color.name}
+                </button>
+              ))
+            }
+          </div>
+        </div>
+
+        <div class="option">
+          <p class="eyebrow">Size</p>
+          <div class="sizes" role="group" aria-label="Size">
+            {
+              product.sizes.map((size) => (
+                <button
+                  type="button"
+                  class:list={['size', { 'is-selected': size === 'M' }]}
+                  data-size={size}
+                  aria-pressed={size === 'M' ? 'true' : 'false'}
+                >
+                  {size}
+                </button>
+              ))
+            }
+          </div>
+        </div>
+
+        <div class="option">
+          <p class="eyebrow">Quantity</p>
+          <div class="qty">
+            <button type="button" data-dec aria-label="Decrease quantity"><Icon name="minus" size={16} /></button>
+            <span data-qty>1</span>
+            <button type="button" data-inc aria-label="Increase quantity"><Icon name="plus" size={16} /></button>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-outline" type="button" data-add>Add to Cart</button>
+          <button class="btn" type="button" data-buy>Buy Now</button>
+          <button class="btn btn-wa" type="button" data-wa>
+            <Icon name="chat" size={16} />
+            Buy on WhatsApp
+          </button>
+        </div>
+
+        <div class="desc">
+          <p class="eyebrow">Description</p>
+          <p>{product.summary}</p>
+        </div>
+        <ul class="notes">
+          <li><Icon name="truck" size={16} /> Delivery available across India</li>
+          <li><Icon name="phone" size={16} /> Questions? Call {phoneDisplay()} (after 5 PM)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var colour = new URLSearchParams(location.search).get('colour');
+      if (!colour) return;
+      var root = document.getElementById('pdp');
+      if (!root) return;
+      var match = null;
+      root.querySelectorAll('[data-color]').forEach(function (el) {
+        if (el.getAttribute('data-color') === colour) match = el;
+      });
+      if (!match) return;
+      var image = match.getAttribute('data-image');
+      var label = match.getAttribute('data-label');
+      root.setAttribute('data-active', colour);
+      var main = root.querySelector('[data-main]');
+      if (main && image) {
+        main.src = image;
+        main.alt = label || '';
+      }
+      var title = root.querySelector('[data-title]');
+      var crumb = root.querySelector('[data-crumb]');
+      var colourLabel = root.querySelector('[data-colour-label]');
+      if (title && label) title.textContent = label;
+      if (crumb && label) crumb.textContent = label;
+      if (colourLabel) colourLabel.textContent = colour;
+      root.querySelectorAll('[data-color]').forEach(function (el) {
+        var on = el.getAttribute('data-color') === colour;
+        el.classList.toggle('is-selected', on);
+        el.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    })();
+  </script>
+</BaseLayout>
+
+<script>
+  import { addToCart, MAX_QTY } from '../../scripts/cart';
+  import { resolvedLines, toOrderLines } from '../../scripts/bag';
+  import { orderMessage, sendOrder, type OrderLine } from '../../scripts/order';
+  import { site } from '../../config';
+  import { getProduct } from '../../data/products';
+  import { absoluteUrl, colorLabel, productUrl } from '../../lib/catalog';
+
+  const root = document.getElementById('pdp');
+  if (root) {
+    const qtyEl = root.querySelector<HTMLElement>('[data-qty]')!;
+    let qty = 1;
+
+    function activeColor() {
+      return root!.dataset.active || root!.querySelector<HTMLElement>('[data-color].is-selected')?.dataset.color || '';
+    }
+
+    function selectColor(color: string) {
+      const source = [...root!.querySelectorAll<HTMLElement>('[data-color]')].find((el) => el.dataset.color === color);
+      if (!source) return;
+      root!.dataset.active = color;
+      const main = root!.querySelector<HTMLImageElement>('[data-main]')!;
+      main.src = source.dataset.image || main.src;
+      main.alt = source.dataset.label || '';
+      root!.querySelector('[data-title]')!.textContent = source.dataset.label || '';
+      root!.querySelector('[data-crumb]')!.textContent = source.dataset.label || '';
+      root!.querySelector('[data-colour-label]')!.textContent = color;
+      root!.querySelectorAll<HTMLElement>('[data-color]').forEach((el) => {
+        const on = el.dataset.color === color;
+        el.classList.toggle('is-selected', on);
+        el.setAttribute('aria-pressed', String(on));
+      });
+      const url = new URL(location.href);
+      url.searchParams.set('colour', color);
+      history.replaceState(null, '', url);
+    }
+
+    function selectedSize() {
+      return root!.querySelector<HTMLElement>('[data-size].is-selected')?.dataset.size || 'M';
+    }
+
+    function currentLine() {
+      return {
+        slug: root!.dataset.slug || '',
+        color: activeColor(),
+        size: selectedSize(),
+        qty,
+      };
+    }
+
+    root.querySelectorAll<HTMLButtonElement>('[data-color]').forEach((btn) => {
+      btn.addEventListener('click', () => selectColor(btn.dataset.color || ''));
+    });
+
+    root.querySelectorAll<HTMLButtonElement>('[data-size]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        root!.querySelectorAll<HTMLElement>('[data-size]').forEach((el) => {
+          const on = el === btn;
+          el.classList.toggle('is-selected', on);
+          el.setAttribute('aria-pressed', String(on));
+        });
+      });
+    });
+
+    root.querySelector('[data-dec]')?.addEventListener('click', () => {
+      qty = Math.max(1, qty - 1);
+      qtyEl.textContent = String(qty);
+    });
+    root.querySelector('[data-inc]')?.addEventListener('click', () => {
+      qty = Math.min(MAX_QTY, qty + 1);
+      qtyEl.textContent = String(qty);
+    });
+
+    root.querySelector('[data-add]')?.addEventListener('click', () => {
+      const line = currentLine();
+      addToCart(line);
+      const label = root!.querySelector('[data-title]')?.textContent || 'Item';
+      window.dispatchEvent(new CustomEvent('cart:toast', { detail: `${label} added to bag` }));
+      window.dispatchEvent(new CustomEvent('cart:open'));
+    });
+
+    root.querySelector('[data-buy]')?.addEventListener('click', () => {
+      addToCart(currentLine());
+      const lines = resolvedLines();
+      if (lines.length) sendOrder(site.whatsappNumber, orderMessage(toOrderLines(lines)));
+    });
+
+    function selectionMessage(): string | null {
+      const line = currentLine();
+      const product = getProduct(line.slug);
+      if (!product) return null;
+      const order: OrderLine = {
+        name: colorLabel(product.category, line.color),
+        color: line.color,
+        size: line.size,
+        qty: line.qty,
+        price: product.price,
+        url: absoluteUrl(productUrl(product, line.color)),
+      };
+      return orderMessage([order]);
+    }
+
+    root.querySelector('[data-wa]')?.addEventListener('click', () => {
+      const message = selectionMessage();
+      if (message) sendOrder(site.whatsappNumber, message);
+    });
+  }
+</script>
+
+<style>
+  .pdp {
+    padding-block: 40px 80px;
+  }
+
+  @media (min-width: 768px) {
+    .pdp {
+      padding-block: 64px 96px;
+    }
+  }
+
+  .crumbs {
+    margin-bottom: 32px;
+    color: var(--muted-fg);
+  }
+
+  .crumbs a:hover {
+    color: var(--fg);
+  }
+
+  .crumb-current {
+    color: var(--fg);
+  }
+
+  .pdp-grid {
+    display: grid;
+    gap: 40px;
+  }
+
+  @media (min-width: 768px) {
+    .pdp-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+  }
+
+  .stage {
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--muted);
+  }
+
+  .stage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .thumbs {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .thumb {
+    aspect-ratio: 1;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid transparent;
+    background: var(--muted);
+    cursor: pointer;
+  }
+
+  .thumb.is-selected {
+    border-color: var(--fg);
+  }
+
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  h1 {
+    margin-top: 12px;
+    font-size: clamp(2.4rem, 4vw, 3.2rem);
+  }
+
+  .price {
+    margin-top: 16px;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .tax {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--muted-fg);
+  }
+
+  .option {
+    margin-top: 28px;
+  }
+
+  .chips,
+  .sizes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .chip,
+  .size {
+    border: 1px solid var(--line);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .chip {
+    padding: 8px 16px;
+    font-size: 0.75rem;
+  }
+
+  .size {
+    width: 56px;
+    height: 44px;
+    font-size: 0.875rem;
+  }
+
+  .chip:hover,
+  .size:hover {
+    border-color: var(--fg);
+  }
+
+  .chip.is-selected,
+  .size.is-selected {
+    border-color: var(--fg);
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  .qty {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 12px;
+    border: 1px solid var(--line);
+  }
+
+  .qty button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .qty span {
+    width: 40px;
+    text-align: center;
+  }
+
+  .actions {
+    display: grid;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  @media (min-width: 640px) {
+    .actions {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .btn-wa {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .desc {
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+  }
+
+  .desc p:last-child {
+    margin-top: 12px;
+    color: var(--muted-fg);
+    line-height: 1.7;
+  }
+
+  .notes {
+    list-style: none;
+    margin: 24px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+    color: var(--muted-fg);
+    font-size: 0.9rem;
+  }
+
+  .notes li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .notes :global(svg) {
+    color: var(--gold);
+    flex: none;
+  }
+</style>

@@ -1,256 +1,679 @@
 ---
 import Icon from './Icon.astro';
-import { categories } from '../data/products';
+import { formatPrice } from '../lib/catalog';
 
-const path = Astro.url.pathname;
-const primary = [
-  { href: '/shop/', label: 'Shop all' },
-  { href: '/shop/t-shirts/', label: 'T-Shirts' },
-  { href: '/shop/shirts/', label: 'Shirts' },
-  { href: '/shop/trousers/', label: 'Trousers' },
-  { href: '/about/', label: 'About' },
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const left = [
+  { href: '/shirts/', label: 'Shirts' },
+  { href: '/trousers/', label: 'Trousers' },
+  { href: '/combinations/', label: 'Style Combinations' },
 ];
-const isActive = (href: string) => (href === '/shop/' ? path === '/shop/' || path === '/shop' : path.startsWith(href));
+const right = [
+  { href: '/about/', label: 'About' },
+  { href: '/contact/', label: 'Contact' },
+];
+const all = [...left, ...right];
+const isActive = (href: string) => path === href.replace(/\/$/, '');
 ---
 
 <header class="site-header">
-  <div class="container bar">
+  <p class="announce">Free delivery across India · Order on WhatsApp</p>
+  <div class="bar">
     <button class="icon-btn menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" data-menu-toggle>
-      <Icon name="menu" class="i-open" />
-      <Icon name="close" class="i-close" />
-      <span class="visually-hidden">Open menu</span>
+      <Icon name="menu" size={20} class="i-open" />
+      <Icon name="close" size={20} class="i-close" />
+      <span class="visually-hidden">Menu</span>
     </button>
 
-    <a class="logo" href="/">
-      <span class="logo-mark" aria-hidden="true">EO</span>
-      <span class="logo-text">Essential Outfits</span>
-    </a>
-
-    <nav class="nav-desktop" aria-label="Main">
-      {primary.map((l) => <a href={l.href} aria-current={isActive(l.href) ? 'page' : undefined}>{l.label}</a>)}
+    <nav class="nav-left" aria-label="Collections">
+      {
+        left.map((l) => (
+          <a href={l.href} class:list={['eyebrow', { 'is-active': isActive(l.href) }]}>
+            {l.label}
+          </a>
+        ))
+      }
     </nav>
 
-    <a class="icon-btn cart-btn" href="/cart/" data-cart-label aria-label="Cart">
-      <Icon name="bag" />
-      <span class="cart-count" data-cart-count hidden>0</span>
+    <a class="logo" href="/" aria-label="Essential Outfits home">
+      <span class="logo-name">Essential</span>
+      <span class="logo-sub"><span></span>Outfits<span></span></span>
     </a>
+
+    <div class="tools">
+      <nav class="nav-right" aria-label="Company">
+        {
+          right.map((l) => (
+            <a href={l.href} class:list={['eyebrow', { 'is-active': isActive(l.href) }]}>
+              {l.label}
+            </a>
+          ))
+        }
+      </nav>
+      <button class="icon-btn" type="button" aria-expanded="false" aria-controls="site-search" data-search-toggle>
+        <Icon name="search" size={20} strokeWidth={1.5} />
+        <span class="visually-hidden">Search</span>
+      </button>
+      <button class="icon-btn cart-btn" type="button" data-cart-open data-cart-label aria-label="Open cart">
+        <Icon name="bag" size={20} strokeWidth={1.5} />
+        <span class="cart-count" data-cart-count hidden>0</span>
+      </button>
+    </div>
   </div>
 
-  <div class="mobile-nav" id="mobile-nav" hidden>
-    <nav class="container" aria-label="Mobile">
-      <p class="mobile-label">Shop</p>
-      <ul>
-        <li><a href="/shop/">All products</a></li>
-        {categories.map((c) => <li><a href={`/shop/${c.slug}/`}>{c.name}</a></li>)}
-      </ul>
-      <p class="mobile-label">Help</p>
-      <ul>
-        <li><a href="/about/">About us</a></li>
-        <li><a href="/contact/">Contact</a></li>
-        <li><a href="/shipping-returns/">Shipping &amp; returns</a></li>
-      </ul>
-    </nav>
-  </div>
+  <form class="search-panel" id="site-search" action="/search/" method="get" hidden data-search-form>
+    <div class="container search-row">
+      <Icon name="search" size={16} />
+      <input name="q" type="search" placeholder="Search shirts, trousers, colours…" autocomplete="off" data-search-input />
+      <button class="search-go" type="submit">Search</button>
+    </div>
+  </form>
+
+  <nav class="mobile-nav" id="mobile-nav" hidden>
+    {
+      all.map((l) => (
+        <a href={l.href} class="eyebrow">
+          {l.label}
+        </a>
+      ))
+    }
+  </nav>
 </header>
 
+<div class="drawer" data-cart-drawer hidden>
+  <button class="drawer-backdrop" type="button" data-cart-close aria-label="Close cart"></button>
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="bag-title">
+    <button class="drawer-x" type="button" data-cart-close aria-label="Close">
+      <Icon name="close" size={16} />
+    </button>
+    <header class="drawer-head">
+      <h2 id="bag-title">Your Bag</h2>
+      <p class="muted" data-bag-count>Your bag is empty</p>
+    </header>
+    <div class="drawer-body">
+      <div class="drawer-empty" data-bag-empty>
+        <Icon name="bag" size={40} strokeWidth={1} />
+        <p>Nothing here yet.</p>
+      </div>
+      <div class="drawer-filled" data-bag-filled hidden>
+        <ul class="bag-lines" data-bag-lines></ul>
+        <div class="bag-foot">
+          <div class="bag-total">
+            <span class="eyebrow">Total</span>
+            <strong data-bag-total>{formatPrice(0)}</strong>
+          </div>
+          <a class="btn btn-block" href="/cart/">Proceed to Checkout</a>
+          <button class="btn btn-wa" type="button" data-bag-wa>
+            <Icon name="chat" size={16} />
+            Order on WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+
+<template id="bag-line">
+  <li class="bag-line">
+    <a class="bag-thumb" data-href tabindex="-1" aria-hidden="true"><img alt="" width="80" height="100" data-img /></a>
+    <div>
+      <h3 data-title></h3>
+      <p class="muted" data-opts></p>
+      <p class="bag-price" data-price></p>
+      <div class="bag-qty">
+        <button type="button" data-dec aria-label="Decrease"><Icon name="minus" size={12} /></button>
+        <span data-qty></span>
+        <button type="button" data-inc aria-label="Increase"><Icon name="plus" size={12} /></button>
+        <button class="bag-remove" type="button" data-remove aria-label="Remove"><Icon name="trash" size={16} /></button>
+      </div>
+    </div>
+  </li>
+</template>
+
 <script>
-  import { watchCartCount } from '../scripts/cart';
+  import { watchCartCount, setQty, MAX_QTY } from '../scripts/cart';
+  import { bagTotal, resolvedLines, toOrderLines } from '../scripts/bag';
+  import { formatPrice } from '../lib/catalog';
+  import { orderMessage, sendOrder } from '../scripts/order';
+  import { site } from '../config';
 
   watchCartCount();
 
-  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
-  const panel = document.getElementById('mobile-nav');
-  const label = toggle?.querySelector('.visually-hidden');
+  const menuBtn = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.getElementById('mobile-nav');
+  const searchBtn = document.querySelector<HTMLButtonElement>('[data-search-toggle]');
+  const searchForm = document.querySelector<HTMLFormElement>('[data-search-form]');
+  const searchInput = document.querySelector<HTMLInputElement>('[data-search-input]');
+  const drawer = document.querySelector<HTMLElement>('[data-cart-drawer]');
+  const toast = document.querySelector<HTMLElement>('[data-toast]');
+  const template = document.querySelector<HTMLTemplateElement>('#bag-line');
 
-  function setOpen(open: boolean) {
-    if (!toggle || !panel) return;
-    toggle.setAttribute('aria-expanded', String(open));
-    panel.hidden = !open;
-    document.body.classList.toggle('menu-open', open);
-    if (label) label.textContent = open ? 'Close menu' : 'Open menu';
+  function setMenu(open: boolean) {
+    if (!menuBtn || !menu) return;
+    menuBtn.setAttribute('aria-expanded', String(open));
+    menu.hidden = !open;
+    menuBtn.classList.toggle('is-open', open);
   }
 
-  toggle?.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
-  document.addEventListener('keydown', (e) => e.key === 'Escape' && setOpen(false));
-  window.matchMedia('(min-width: 960px)').addEventListener('change', (e) => e.matches && setOpen(false));
+  function setSearch(open: boolean) {
+    if (!searchBtn || !searchForm) return;
+    searchBtn.setAttribute('aria-expanded', String(open));
+    searchForm.hidden = !open;
+    if (open) searchInput?.focus();
+  }
+
+  function setDrawer(open: boolean) {
+    if (!drawer) return;
+    drawer.hidden = !open;
+    document.body.classList.toggle('drawer-open', open);
+    if (open) {
+      renderBag();
+      drawer.querySelector<HTMLButtonElement>('.drawer-x')?.focus();
+    }
+  }
+
+  function showToast(message: string) {
+    if (!toast) return;
+    toast.textContent = message;
+    toast.hidden = false;
+    window.setTimeout(() => {
+      toast.hidden = true;
+    }, 2400);
+  }
+
+  function renderBag() {
+    if (!drawer || !template) return;
+    const lines = resolvedLines();
+    const count = lines.reduce((n, l) => n + l.line.qty, 0);
+    const empty = drawer.querySelector<HTMLElement>('[data-bag-empty]')!;
+    const filled = drawer.querySelector<HTMLElement>('[data-bag-filled]')!;
+    empty.hidden = lines.length > 0;
+    filled.hidden = lines.length === 0;
+    drawer.querySelector('[data-bag-count]')!.textContent =
+      count === 0 ? 'Your bag is empty' : `${count} item${count === 1 ? '' : 's'}`;
+
+    const list = drawer.querySelector<HTMLUListElement>('[data-bag-lines]')!;
+    list.replaceChildren(
+      ...lines.map((item) => {
+        const node = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+        node.querySelector<HTMLAnchorElement>('[data-href]')!.href = item.url;
+        const img = node.querySelector<HTMLImageElement>('[data-img]')!;
+        img.src = item.image;
+        img.alt = item.label;
+        node.querySelector('[data-title]')!.textContent = item.product.name;
+        node.querySelector('[data-opts]')!.textContent = `${item.line.color} · ${item.line.size}`;
+        node.querySelector('[data-price]')!.textContent = formatPrice(item.product.price);
+        node.querySelector('[data-qty]')!.textContent = String(item.line.qty);
+        const dec = node.querySelector<HTMLButtonElement>('[data-dec]')!;
+        const inc = node.querySelector<HTMLButtonElement>('[data-inc]')!;
+        inc.disabled = item.line.qty >= MAX_QTY;
+        dec.addEventListener('click', () => setQty(item.index, item.line.qty - 1));
+        inc.addEventListener('click', () => setQty(item.index, item.line.qty + 1));
+        node.querySelector('[data-remove]')!.addEventListener('click', () => setQty(item.index, 0));
+        return node;
+      }),
+    );
+    drawer.querySelector('[data-bag-total]')!.textContent = formatPrice(bagTotal(lines));
+  }
+
+  menuBtn?.addEventListener('click', () => setMenu(menuBtn.getAttribute('aria-expanded') !== 'true'));
+  searchBtn?.addEventListener('click', () => setSearch(searchBtn.getAttribute('aria-expanded') !== 'true'));
+  document.querySelectorAll('[data-cart-open]').forEach((btn) => btn.addEventListener('click', () => setDrawer(true)));
+  drawer?.querySelectorAll('[data-cart-close]').forEach((btn) => btn.addEventListener('click', () => setDrawer(false)));
+  drawer?.querySelector('[data-bag-wa]')?.addEventListener('click', () => {
+    const lines = resolvedLines();
+    if (!lines.length) return;
+    sendOrder(site.whatsappNumber, orderMessage(toOrderLines(lines)));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    setMenu(false);
+    setSearch(false);
+    setDrawer(false);
+  });
+
+  window.matchMedia('(min-width: 768px)').addEventListener('change', (e) => {
+    if (e.matches) setMenu(false);
+  });
+
+  window.addEventListener('cart:open', () => setDrawer(true));
+  window.addEventListener('cart:toast', (e) => showToast((e as CustomEvent<string>).detail));
+  window.addEventListener('cart:change', () => {
+    if (drawer && !drawer.hidden) renderBag();
+  });
+
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q');
+  if (q && searchInput && location.pathname.startsWith('/search')) {
+    searchInput.value = q;
+    setSearch(true);
+  }
 </script>
 
 <style>
   .site-header {
     position: sticky;
     top: 0;
-    z-index: 50;
-    background: rgb(246 243 238 / 0.9);
-    backdrop-filter: saturate(1.4) blur(12px);
-    -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    z-index: 40;
+    background: color-mix(in oklch, var(--bg) 90%, transparent);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--line);
   }
 
+  .announce {
+    margin: 0;
+    background: var(--ink);
+    color: var(--ink-fg);
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+  }
+
+  @media (max-width: 640px) {
+    .announce {
+      letter-spacing: 0.14em;
+      font-size: 9px;
+    }
+  }
+
   .bar {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 12px;
-    height: var(--header-h);
+    width: min(var(--wrap), calc(100% - 40px));
+    height: 64px;
+    margin-inline: auto;
   }
 
   .logo {
-    display: inline-flex;
+    justify-self: center;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    margin-right: auto;
+    line-height: 1;
+    color: var(--fg);
   }
 
-  .logo-mark {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: #fff;
+  .logo-name {
     font-family: var(--font-display);
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-size: 1.25rem;
+    letter-spacing: 0.35em;
+    text-indent: 0.35em;
+    text-transform: uppercase;
   }
 
-  .logo-text {
-    font-family: var(--font-display);
-    font-size: 1.2rem;
+  .logo-sub {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    color: var(--gold);
+    font-size: 9px;
     font-weight: 600;
-    letter-spacing: -0.01em;
-    font-variation-settings: 'opsz' 36;
+    letter-spacing: 0.5em;
+    text-indent: 0.5em;
+    text-transform: uppercase;
   }
 
-  .nav-desktop {
+  .logo-sub span {
+    width: 16px;
+    height: 1px;
+    background: var(--gold);
+    text-indent: 0;
+  }
+
+  .nav-left,
+  .nav-right {
     display: none;
-    gap: 28px;
-    margin-right: 20px;
+    align-items: center;
+    gap: 32px;
   }
 
-  .nav-desktop a {
-    font-size: 0.95rem;
-    font-weight: 500;
-    text-decoration: none;
-    color: var(--ink-2);
-    padding-block: 6px;
-    border-bottom: 1.5px solid transparent;
+  .nav-left a:hover,
+  .nav-right a:hover,
+  .nav-left a.is-active,
+  .nav-right a.is-active {
+    color: var(--gold);
   }
 
-  .nav-desktop a:hover,
-  .nav-desktop a[aria-current='page'] {
-    color: var(--ink);
-    border-bottom-color: var(--ink);
+  .tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
   }
 
   .icon-btn {
     position: relative;
-    display: inline-grid;
+    display: grid;
     place-items: center;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
     border: 0;
-    border-radius: 50%;
-    background: transparent;
+    background: none;
+    color: inherit;
     cursor: pointer;
-    text-decoration: none;
   }
 
   .icon-btn:hover {
-    background: rgb(25 24 22 / 0.06);
+    color: var(--gold);
   }
 
-  .menu-btn {
-    margin-left: -10px;
-  }
-
-  .menu-btn :global(.i-close),
-  .menu-btn[aria-expanded='true'] :global(.i-open) {
+  .menu-btn .i-close {
     display: none;
   }
 
-  .menu-btn[aria-expanded='true'] :global(.i-close) {
-    display: block;
+  .menu-btn.is-open .i-open {
+    display: none;
   }
 
-  .cart-btn {
-    margin-right: -10px;
+  .menu-btn.is-open .i-close {
+    display: block;
   }
 
   .cart-count {
     position: absolute;
-    top: 4px;
+    top: 2px;
     right: 2px;
-    min-width: 19px;
-    height: 19px;
-    padding: 0 5px;
-    border-radius: 999px;
-    background: var(--accent);
-    color: #fff;
-    font-size: 0.72rem;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--ink);
+    font-size: 10px;
     font-weight: 700;
-    line-height: 19px;
-    text-align: center;
   }
 
   .cart-count[hidden] {
     display: none;
   }
 
-  .mobile-nav {
+  .search-panel {
     border-top: 1px solid var(--line);
     background: var(--bg);
-    max-height: calc(100dvh - var(--header-h));
-    overflow-y: auto;
-    padding-bottom: 24px;
   }
 
-  .mobile-label {
-    margin: 20px 0 4px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
+  .search-panel[hidden],
+  .mobile-nav[hidden] {
+    display: none;
   }
 
-  .mobile-nav ul {
-    list-style: none;
-    margin: 0;
+  .search-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-block: 16px;
+    color: var(--muted-fg);
+  }
+
+  .search-row input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    padding: 8px 0;
+    color: var(--fg);
+    font-size: 0.95rem;
+    outline: none;
+  }
+
+  .search-go {
+    border: 0;
+    background: none;
     padding: 0;
+    color: var(--gold);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    cursor: pointer;
   }
 
-  .mobile-nav a {
-    display: block;
-    padding: 10px 0;
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    text-decoration: none;
-    border-bottom: 1px solid var(--line);
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px 20px 28px;
+    border-top: 1px solid var(--line);
   }
 
-  @media (min-width: 960px) {
-    .menu-btn {
-      display: none;
+  @media (min-width: 768px) {
+    .bar {
+      grid-template-columns: 1fr auto 1fr;
+      height: 80px;
     }
 
-    .nav-desktop {
-      display: flex;
-    }
-
+    .menu-btn,
     .mobile-nav {
       display: none;
     }
+
+    .nav-left,
+    .nav-right {
+      display: flex;
+    }
+
+    .nav-left {
+      justify-self: start;
+    }
+
+    .logo-name {
+      font-size: 1.5rem;
+    }
+
+    .tools {
+      gap: 16px;
+    }
   }
 
-  :global(body.menu-open) {
+  .drawer[hidden] {
+    display: none;
+  }
+
+  .drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+  }
+
+  .drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgb(20 18 16 / 0.45);
+    cursor: pointer;
+  }
+
+  .drawer-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 28rem);
+    background: var(--bg);
+    padding: 28px 20px 20px;
+  }
+
+  .drawer-x {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
+  .drawer-x:hover {
+    opacity: 1;
+  }
+
+  .drawer-head h2 {
+    font-size: 2rem;
+  }
+
+  .drawer-head p {
+    margin-top: 4px;
+    font-size: 0.9rem;
+  }
+
+  .drawer-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    margin-top: 24px;
+  }
+
+  .drawer-empty {
+    flex: 1;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 12px;
+    color: var(--muted-fg);
+    text-align: center;
+  }
+
+  .drawer-empty[hidden],
+  .drawer-filled[hidden] {
+    display: none;
+  }
+
+  .drawer-filled {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .bag-lines {
+    list-style: none;
+    margin: 0;
+    padding: 0 4px 0 0;
+    overflow: auto;
+    flex: 1;
+  }
+
+  .bag-line {
+    display: flex;
+    gap: 16px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .bag-thumb {
+    flex: none;
+    width: 80px;
+    height: 96px;
+    overflow: hidden;
+    background: var(--muted);
+  }
+
+  .bag-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .bag-line h3 {
+    font-size: 1.25rem;
+    line-height: 1.15;
+  }
+
+  .bag-line .muted {
+    margin-top: 2px;
+    font-size: 0.75rem;
+  }
+
+  .bag-price {
+    margin-top: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .bag-qty {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .bag-qty button {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--line);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .bag-qty span {
+    width: 24px;
+    text-align: center;
+    font-size: 0.875rem;
+  }
+
+  .bag-remove {
+    margin-left: auto;
+    border: 0 !important;
+    color: var(--muted-fg);
+  }
+
+  .bag-foot {
+    display: grid;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .bag-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bag-total strong {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 500;
+  }
+
+  :global(body.drawer-open) {
     overflow: hidden;
   }
 
-  @media (min-width: 960px) {
-    :global(body.menu-open) {
-      overflow: auto;
-    }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 90;
+    transform: translateX(-50%);
+    padding: 12px 18px;
+    background: var(--ink);
+    color: var(--ink-fg);
+    font-size: 0.92rem;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+  }
+
+  .toast[hidden] {
+    display: none;
   }
 </style>

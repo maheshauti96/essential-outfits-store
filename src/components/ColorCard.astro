@@ -1,0 +1,24 @@
+---
+import type { Product, ProductColor } from '../data/products';
+import { colorLabel, formatPrice, productUrl } from '../lib/catalog';
+
+interface Props {
+  product: Product;
+  color: ProductColor;
+}
+
+const { product, color } = Astro.props;
+const label = colorLabel(product.category, color.name);
+const hay = `${color.name} ${label} ${product.name} ${product.category} shirt trouser jeans`.toLowerCase();
+---
+
+<a class="pcard" href={productUrl(product, color.name)} data-hay={hay}>
+  <div class="pcard-media">
+    <img src={color.image} alt={label} width="800" height="1008" loading="lazy" />
+  </div>
+  <div class="pcard-row">
+    <h3>{label}</h3>
+    <span>{formatPrice(product.price)}</span>
+  </div>
+  <p class="pcard-sizes">Sizes {product.sizes.join(' · ')}</p>
+</a>

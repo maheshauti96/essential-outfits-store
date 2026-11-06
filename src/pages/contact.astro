@@ -1,89 +1,67 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import PageHeader from '../components/PageHeader.astro';
 import Icon from '../components/Icon.astro';
-import Todo from '../components/Todo.astro';
-import { site, orderingEnabled } from '../config';
+import { orderingEnabled, phoneDisplay, phoneTel, site } from '../config';
 import { whatsappUrl } from '../scripts/order';
 
-const chatUrl = orderingEnabled ? whatsappUrl(site.whatsappNumber, 'Hi Essential Outfits!') : null;
-const n = site.whatsappNumber;
-// Shows Indian numbers as +91 95039 36806; anything else as +<digits>.
-const prettyNumber = !n ? '' : n.startsWith('91') && n.length === 12 ? `+91 ${n.slice(2, 7)} ${n.slice(7)}` : `+${n}`;
-const hasAny = chatUrl || site.email || site.instagram;
+const instagram = site.instagram ? `https://instagram.com/${site.instagram}` : 'https://instagram.com';
+const cards = [
+  {
+    icon: 'chat' as const,
+    title: 'WhatsApp Ordering',
+    body: 'Chat with us to place an order',
+    href: orderingEnabled ? whatsappUrl(site.whatsappNumber, 'Hello Essential Outfits, I have a question.') : undefined,
+  },
+  {
+    icon: 'phone' as const,
+    title: 'Customer Support',
+    body: `${phoneDisplay()} · Calls accepted after 5 PM`,
+    href: phoneTel ? `tel:${phoneTel}` : undefined,
+  },
+  {
+    icon: 'instagram' as const,
+    title: 'Instagram',
+    body: 'Follow our latest drops',
+    href: instagram,
+  },
+  {
+    icon: 'facebook' as const,
+    title: 'Facebook',
+    body: 'Join our community',
+    href: 'https://facebook.com',
+  },
+  {
+    icon: 'truck' as const,
+    title: 'Delivery',
+    body: 'Available across India',
+  },
+];
 ---
 
-<BaseLayout title="Contact us" description="Get in touch with Essential Outfits on WhatsApp for orders, sizing help and questions.">
-  <div class="container">
-    <PageHeader
-      eyebrow="Contact"
-      title="We're here to help."
-      intro="Questions about sizing, an order, or something else? WhatsApp is the fastest way to reach us."
-    />
-
-    <div class="cards">
-      <div class="card">
-        <span class="icon whatsapp"><Icon name="chat" /></span>
-        <h2>WhatsApp</h2>
-        {
-          chatUrl ? (
-            <>
-              <p class="muted">Orders, sizing help and questions. {prettyNumber}</p>
-              <a class="btn btn-whatsapp" href={chatUrl} target="_blank" rel="noopener">
-                Chat with us
-              </a>
-            </>
-          ) : (
-            <p class="muted">
-              WhatsApp ordering opens soon. <Todo>your WhatsApp number in src/config.ts.</Todo>
-            </p>
-          )
-        }
-      </div>
-
-      <div class="card">
-        <span class="icon"><Icon name="mail" /></span>
-        <h2>Email</h2>
-        {
-          site.email ? (
-            <>
-              <p class="muted">For anything that isn't urgent.</p>
-              <a class="text-link" href={`mailto:${site.email}`}>{site.email}</a>
-            </>
-          ) : (
-            <p class="muted"><Todo>your email address in src/config.ts.</Todo></p>
-          )
-        }
-      </div>
-
-      <div class="card">
-        <span class="icon"><Icon name="instagram" /></span>
-        <h2>Instagram</h2>
-        {
-          site.instagram ? (
-            <>
-              <p class="muted">New pieces and outfit ideas.</p>
-              <a class="text-link" href={`https://instagram.com/${site.instagram}`} target="_blank" rel="noopener">
-                @{site.instagram}
-              </a>
-            </>
-          ) : (
-            <p class="muted"><Todo>your Instagram handle in src/config.ts.</Todo></p>
-          )
-        }
-      </div>
-    </div>
-
-    {!hasAny && !site.previewMode && <p class="lead">Contact details are coming soon.</p>}
-
+<BaseLayout title="Contact" description="We're here to help you find your perfect fit. Order on WhatsApp or call after 5 PM.">
+  <header class="page-head">
+    <p class="eyebrow gold">Get in touch</p>
+    <h1>Contact Us</h1>
+    <p class="lede">We're here to help you find your perfect fit.</p>
+  </header>
+  <div class="container cards">
     {
-      (site.legalName || site.address) && (
-        <p class="address muted">
-          {site.legalName}
-          {site.legalName && site.address && <br />}
-          {site.address}
-        </p>
-      )
+      cards.map((card) => {
+        const inner = (
+          <div class="card">
+            <Icon name={card.icon} size={24} strokeWidth={1.5} />
+            <h2>{card.title}</h2>
+            <p>{card.body}</p>
+          </div>
+        );
+        return card.href ? (
+          <a href={card.href} target={card.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer">
+            {inner}
+          </a>
+        ) : (
+          inner
+        );
+      })
     }
   </div>
 </BaseLayout>
@@ -91,56 +69,46 @@ const hasAny = chatUrl || site.email || site.instagram;
 <style>
   .cards {
     display: grid;
-    gap: 16px;
-    margin-top: 24px;
+    gap: 20px;
+    padding-bottom: 96px;
   }
 
-  @media (min-width: 820px) {
+  @media (min-width: 640px) {
+    .cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
     .cards {
       grid-template-columns: repeat(3, 1fr);
     }
   }
 
   .card {
-    display: grid;
-    align-content: start;
-    justify-items: start;
-    gap: 6px;
-    background: var(--surface);
+    height: 100%;
     border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 28px;
+    background: var(--card);
+    padding: 32px;
+    transition: border-color 0.15s;
   }
 
-  .card h2 {
-    font-size: 1.4rem;
-    margin: 10px 0 0;
+  a:hover .card {
+    border-color: var(--gold);
+  }
+
+  .card :global(svg) {
+    color: var(--gold);
+  }
+
+  h2 {
+    margin-top: 20px;
+    font-size: 1.7rem;
   }
 
   .card p {
-    margin: 0 0 10px;
-  }
-
-  .icon {
-    display: grid;
-    place-items: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--accent-soft);
-    color: var(--accent);
-  }
-
-  .icon.whatsapp {
-    background: #ddf0e4;
-    color: var(--whatsapp);
-  }
-
-  .address {
-    margin-top: 32px;
-  }
-
-  .container {
-    padding-bottom: clamp(56px, 8vw, 104px);
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: var(--muted-fg);
   }
 </style>

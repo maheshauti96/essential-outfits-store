@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { phoneDisplay } from '../config';
+
+const paragraphs = [
+  "If something isn't right, contact us within 7 days of delivery to request a return or size exchange.",
+  'Items must be unworn, unwashed and returned with original tags and packaging.',
+  'Approved refunds are issued to the original payment method once the item is received and inspected.',
+  `To start a return, message us on WhatsApp at ${phoneDisplay()}.`,
+];
+---
+
+<BaseLayout title="Return & Refund Policy" description="Returns and size exchanges within 7 days of delivery. Message us on WhatsApp to start.">
+  <header class="page-head">
+    <p class="eyebrow gold">Policies</p>
+    <h1>Return &amp; Refund Policy</h1>
+  </header>
+  <div class="prose">
+    {paragraphs.map((p) => <p>{p}</p>)}
+  </div>
+</BaseLayout>

@@ -6,10 +6,22 @@ export default defineConfig({
   site: 'https://essentialoutfits.store',
   trailingSlash: 'ignore',
   build: { format: 'directory' },
+  redirects: {
+    '/shop': '/shirts',
+    '/shop/t-shirts': '/shirts',
+    '/shop/polos': '/shirts',
+    '/shop/shirts': '/shirts',
+    '/shop/hoodies-sweatshirts': '/shirts',
+    '/shop/trousers': '/trousers',
+    '/shop/shorts': '/trousers',
+    '/shop/jackets': '/shirts',
+    '/privacy': '/privacy-policy',
+    '/shipping-returns': '/shipping-policy',
+    '/terms': '/privacy-policy',
+  },
   integrations: [
     sitemap({
-      // Keep utility pages out of search results.
-      filter: (page) => !/\/(cart|404)\/?$/.test(page),
+      filter: (page) => !/\/(cart|search|404)\/?$/.test(page),
     }),
   ],
 });

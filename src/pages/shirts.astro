@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductGrid from '../components/ProductGrid.astro';
+import StockBanner from '../components/StockBanner.astro';
+import { productByCategory } from '../data/products';
+import { formatPrice } from '../lib/catalog';
+
+const product = productByCategory('shirts');
+---
+
+<BaseLayout title="Shirts" description={`${product.summary} Starting at ${formatPrice(product.price)}.`}>
+  <header class="page-head">
+    <p class="eyebrow gold">The Shirt Collection</p>
+    <h1>Shirts</h1>
+    <p class="lede">Six timeless colours in premium cotton. Starting at {formatPrice(product.price)}.</p>
+  </header>
+  <div class="container" style="padding-bottom: 96px">
+    <ProductGrid category="shirts" />
+  </div>
+  <StockBanner />
+</BaseLayout>

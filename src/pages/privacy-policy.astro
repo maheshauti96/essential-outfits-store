@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { phoneDisplay } from '../config';
+
+const paragraphs = [
+  'We collect only the information needed to process your order — your name, phone number, delivery address and email.',
+  'Your details are used to fulfil orders, provide support and, with your consent, share updates about new collections. We never sell your data.',
+  'Payments are confirmed with you directly on WhatsApp. We do not store card details on this website.',
+  `For any privacy request, contact us on WhatsApp at ${phoneDisplay()}.`,
+];
+---
+
+<BaseLayout title="Privacy Policy" description="How Essential Outfits uses the details you share when you order.">
+  <header class="page-head">
+    <p class="eyebrow gold">Policies</p>
+    <h1>Privacy Policy</h1>
+  </header>
+  <div class="prose">
+    {paragraphs.map((p) => <p>{p}</p>)}
+  </div>
+</BaseLayout>

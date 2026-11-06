@@ -20,9 +20,9 @@ interface SiteConfig {
 export const site: SiteConfig = {
   name: 'Essential Outfits',
   url: 'https://essentialoutfits.store',
-  tagline: 'Menswear essentials for every day.',
+  tagline: 'Style that defines you.',
   description:
-    'Essential Outfits: everyday menswear — tees, polos, shirts, hoodies, trousers and jackets. Pick your fit and order on WhatsApp.',
+    'Essential Outfits: timeless shirts and trousers for college, office and everyday wear. Free delivery across India. Order on WhatsApp.',
 
   /**
    * WhatsApp number that receives orders: country code + number, digits only.
@@ -56,3 +56,14 @@ export const site: SiteConfig = {
 };
 
 export const orderingEnabled = site.whatsappNumber.length > 0;
+
+/** "+91 95039 36806" from a 919503936806-style number. */
+export function phoneDisplay(digits = site.whatsappNumber): string {
+  if (/^91\d{10}$/.test(digits)) {
+    const local = digits.slice(2);
+    return `+91 ${local.slice(0, 5)} ${local.slice(5)}`;
+  }
+  return digits ? `+${digits}` : '';
+}
+
+export const phoneTel = site.whatsappNumber ? `+${site.whatsappNumber}` : '';

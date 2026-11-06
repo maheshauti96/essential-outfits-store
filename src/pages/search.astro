@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ColorCard from '../components/ColorCard.astro';
+import { products } from '../data/products';
+---
+
+<BaseLayout title="Search" description="Search Essential Outfits shirts, trousers and jeans by name or colour." noindex>
+  <header class="page-head">
+    <p class="eyebrow gold">Search</p>
+    <h1 data-search-title>All products</h1>
+    <p class="lede" data-search-count>Searching…</p>
+  </header>
+  <div class="container" style="padding-bottom: 96px">
+    <p class="empty muted" data-search-empty hidden>No products found</p>
+    <div class="grid-products" data-search-grid>
+      {products.flatMap((product) => product.colors.map((color) => <ColorCard product={product} color={color} />))}
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+  (function () {
+    var title = document.querySelector('[data-search-title]');
+    var count = document.querySelector('[data-search-count]');
+    var empty = document.querySelector('[data-search-empty]');
+    var grid = document.querySelector('[data-search-grid]');
+    var cards = document.querySelectorAll('[data-hay]');
+    var q = (new URLSearchParams(location.search).get('q') || '').trim().toLowerCase();
+    var words = q.split(/\s+/).filter(Boolean);
+    var shown = 0;
+    cards.forEach(function (card) {
+      var hay = card.getAttribute('data-hay') || '';
+      var match = !q || hay.indexOf(q) !== -1 || words.every(function (word) {
+        return (hay + ' shirt trouser jeans').indexOf(word) !== -1;
+      });
+      card.hidden = !match;
+      if (match) shown += 1;
+    });
+    if (title) title.textContent = q ? '“' + q + '”' : 'All products';
+    if (count) count.textContent = shown + ' result' + (shown === 1 ? '' : 's');
+    if (empty) empty.hidden = shown !== 0;
+    if (grid) grid.hidden = shown === 0;
+  })();
+</script>
+
+<style>
+  .empty {
+    padding: 40px 0;
+    text-align: center;
+  }
+
+  .empty[hidden],
+  .grid-products[hidden] {
+    display: none;
+  }
+</style>

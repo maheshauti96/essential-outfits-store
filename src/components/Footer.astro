@@ -1,181 +1,162 @@
 ---
 import Icon from './Icon.astro';
-import { categories } from '../data/products';
-import { site, orderingEnabled } from '../config';
-import { whatsappUrl } from '../scripts/order';
-
+import { phoneDisplay, phoneTel, site, orderingEnabled } from '../config';
 const year = new Date().getFullYear();
-const chatUrl = orderingEnabled ? whatsappUrl(site.whatsappNumber, 'Hi Essential Outfits!') : null;
+const instagram = site.instagram ? `https://instagram.com/${site.instagram}` : 'https://instagram.com';
+const whatsapp = orderingEnabled ? `https://wa.me/${site.whatsappNumber}` : '/contact/';
+const phone = phoneDisplay();
 ---
 
 <footer class="site-footer">
-  <div class="container footer-grid">
+  <div class="container foot-grid">
     <div class="brand">
-      <a class="logo" href="/">Essential Outfits</a>
-      <p class="muted">{site.tagline} Pick your fit online, then order and pay over WhatsApp.</p>
+      <a class="logo" href="/" aria-label="Essential Outfits home">
+        <span class="logo-name">Essential</span>
+        <span class="logo-sub"><span></span>Outfits<span></span></span>
+      </a>
+      <p class="tag">Dress Better. Live Smarter.</p>
       <div class="social">
-        {
-          chatUrl && (
-            <a href={chatUrl} target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp">
-              <Icon name="chat" />
-            </a>
-          )
-        }
-        {
-          site.instagram && (
-            <a href={`https://instagram.com/${site.instagram}`} target="_blank" rel="noopener" aria-label="Instagram">
-              <Icon name="instagram" />
-            </a>
-          )
-        }
-        {
-          site.email && (
-            <a href={`mailto:${site.email}`} aria-label="Email us">
-              <Icon name="mail" />
-            </a>
-          )
-        }
+        <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram"><Icon name="instagram" size={20} /></a>
+        <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><Icon name="facebook" size={20} /></a>
+        <a href={whatsapp} target="_blank" rel="noreferrer" aria-label="WhatsApp"><Icon name="chat" size={20} /></a>
       </div>
     </div>
 
-    <nav aria-label="Shop">
-      <h2>Shop</h2>
-      <ul>
-        <li><a href="/shop/">All products</a></li>
-        {categories.map((c) => <li><a href={`/shop/${c.slug}/`}>{c.name}</a></li>)}
-      </ul>
+    <nav class="col" aria-label="Collections">
+      <p class="eyebrow gold">Collections</p>
+      <a href="/shirts/">Shirts</a>
+      <a href="/trousers/">Trousers</a>
+      <a href="/combinations/">Style Combinations</a>
     </nav>
 
-    <nav aria-label="Help">
-      <h2>Help</h2>
-      <ul>
-        <li><a href="/contact/">Contact us</a></li>
-        <li><a href="/shipping-returns/">Shipping &amp; returns</a></li>
-        <li><a href="/#how-it-works">How ordering works</a></li>
-      </ul>
+    <nav class="col" aria-label="Policies">
+      <p class="eyebrow gold">Policies</p>
+      <a href="/privacy-policy/">Privacy Policy</a>
+      <a href="/shipping-policy/">Shipping Policy</a>
+      <a href="/returns/">Return &amp; Refund Policy</a>
     </nav>
 
-    <nav aria-label="Company">
-      <h2>Company</h2>
-      <ul>
-        <li><a href="/about/">About us</a></li>
-        <li><a href="/privacy/">Privacy policy</a></li>
-        <li><a href="/terms/">Terms of use</a></li>
-      </ul>
-    </nav>
+    <div class="col">
+      <p class="eyebrow gold">Customer Support</p>
+      {
+        phoneTel && (
+          <a class="phone" href={`tel:${phoneTel}`}>
+            <Icon name="phone" size={16} />
+            {phone}
+          </a>
+        )
+      }
+      <p class="quiet">Calls accepted after 5 PM</p>
+      <p class="quiet">Delivery available across India</p>
+    </div>
   </div>
-
-  <div class="container legal">
-    <p>© {year} {site.legalName || site.name}. All rights reserved.</p>
-    <p>All prices are in Indian rupees (₹).</p>
-  </div>
+  <p class="legal">© {year} Essential Outfits. All rights reserved.</p>
 </footer>
 
 <style>
   .site-footer {
-    margin-top: auto;
     background: var(--ink);
-    color: #e9e5de;
-    padding-top: 64px;
+    color: var(--ink-fg);
+    margin-top: auto;
   }
 
-  .footer-grid {
+  .foot-grid {
     display: grid;
-    gap: 40px;
-    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    padding-block: 64px;
   }
 
-  .brand {
-    grid-column: 1 / -1;
-    max-width: 22rem;
+  @media (min-width: 768px) {
+    .foot-grid {
+      grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    }
   }
 
   .logo {
-    font-family: var(--font-display);
-    font-size: 1.6rem;
-    font-weight: 600;
-    text-decoration: none;
-    color: #fff;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1;
   }
 
-  .brand p {
-    margin-top: 12px;
-    color: #b9b3a9;
+  .logo-name {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    letter-spacing: 0.35em;
+    text-indent: 0.35em;
+    text-transform: uppercase;
+  }
+
+  .logo-sub {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    color: var(--gold);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5em;
+    text-indent: 0.5em;
+    text-transform: uppercase;
+  }
+
+  .logo-sub span {
+    width: 16px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .tag {
+    margin-top: 16px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.15rem;
+    color: color-mix(in oklch, var(--ink-fg) 80%, transparent);
   }
 
   .social {
     display: flex;
-    gap: 8px;
-    margin-top: 8px;
+    gap: 16px;
+    margin-top: 16px;
   }
 
-  .social a {
+  .social a:hover,
+  .col a:hover,
+  .phone:hover {
+    color: var(--gold);
+  }
+
+  .col {
     display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    border: 1px solid #45423c;
-    border-radius: 50%;
-    color: #fff;
+    align-content: start;
+    gap: 12px;
+    font-size: 0.92rem;
   }
 
-  .social a:hover {
-    background: #2a2925;
+  .col a {
+    opacity: 0.8;
   }
 
-  h2 {
-    font-family: var(--font-sans);
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #9d978c;
-    margin-bottom: 14px;
+  .col a:hover {
+    opacity: 1;
   }
 
-  ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
+  .phone {
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
+    opacity: 0.8;
   }
 
-  nav a {
-    text-decoration: none;
-    color: #e9e5de;
-    font-size: 0.95rem;
-  }
-
-  nav a:hover {
-    color: #fff;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+  .quiet {
+    opacity: 0.6;
   }
 
   .legal {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 8px 24px;
-    margin-top: 56px;
-    padding-block: 24px;
-    border-top: 1px solid #34322d;
-    font-size: 0.85rem;
-    color: #9d978c;
-  }
-
-  .legal p {
-    margin: 0;
-  }
-
-  @media (min-width: 860px) {
-    .footer-grid {
-      grid-template-columns: 1.6fr 1fr 1fr 1fr;
-    }
-
-    .brand {
-      grid-column: auto;
-    }
+    border-top: 1px solid color-mix(in oklch, var(--ink-fg) 10%, transparent);
+    padding: 24px 20px;
+    text-align: center;
+    font-size: 0.75rem;
+    opacity: 0.5;
   }
 </style>
