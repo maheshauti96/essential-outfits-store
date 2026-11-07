@@ -112,7 +112,7 @@ import { formatPrice } from '../lib/catalog';
 <script>
   import { setQty, clearCart, MAX_QTY, cartCount } from '../scripts/cart';
   import { bagTotal, resolvedLines, toOrderLines } from '../scripts/bag';
-  import { formatPrice } from '../lib/catalog';
+  import { renderSalePrice } from '../lib/catalog';
   import { orderMessage, readCustomer, saveCustomer, sendOrder } from '../scripts/order';
 
   const root = document.querySelector<HTMLElement>('[data-cart-page]');
@@ -151,9 +151,9 @@ import { formatPrice } from '../lib/catalog';
           img.alt = item.label;
           node.querySelector('[data-name]')!.textContent = item.label;
           node.querySelector('[data-variant]')!.textContent = `${item.line.color} · Size ${item.line.size}`;
-          node.querySelector('[data-unit]')!.textContent = `${formatPrice(item.product.price)} each`;
+          renderSalePrice(node.querySelector<HTMLElement>('[data-unit]')!, item.product.price);
           node.querySelector('[data-qty]')!.textContent = String(item.line.qty);
-          node.querySelector('[data-total]')!.textContent = formatPrice(item.product.price * item.line.qty);
+          renderSalePrice(node.querySelector<HTMLElement>('[data-total]')!, item.product.price * item.line.qty);
           const dec = node.querySelector<HTMLButtonElement>('[data-dec]')!;
           const inc = node.querySelector<HTMLButtonElement>('[data-inc]')!;
           inc.disabled = item.line.qty >= MAX_QTY;
@@ -164,7 +164,7 @@ import { formatPrice } from '../lib/catalog';
         }),
       );
       root!.querySelector('[data-item-count]')!.textContent = String(cartCount(lines.map((l) => l.line)));
-      root!.querySelector('[data-subtotal]')!.textContent = formatPrice(bagTotal(lines));
+      renderSalePrice(root!.querySelector<HTMLElement>('[data-subtotal]')!, bagTotal(lines));
     }
 
     root.querySelector('[data-clear]')?.addEventListener('click', () => {

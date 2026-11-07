@@ -314,12 +314,43 @@ p {
   font-size: 1.35rem;
 }
 
-.pcard-row span {
-  font-size: 0.875rem;
-  font-weight: 600;
-  white-space: nowrap;
+.pcard-row .price-pair {
+  justify-content: flex-end;
+  text-align: right;
 }
 
+.price-pair {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.price-was {
+  color: var(--muted-fg);
+  font-size: 0.82em;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+
+.price-now {
+  font-weight: 600;
+}
+
+.price-off {
+  margin-left: 8px;
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pcard-off .price-off {
+  margin-left: 0;
+}
+
+.pcard-off,
 .pcard-sizes {
   margin-top: 4px;
   font-size: 0.75rem;

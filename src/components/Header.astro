@@ -157,7 +157,7 @@ const isActive = (href: string) => path === href.replace(/\/$/, '');
 <script>
   import { watchCartCount, setQty, MAX_QTY } from '../scripts/cart';
   import { bagTotal, resolvedLines, toOrderLines } from '../scripts/bag';
-  import { formatPrice } from '../lib/catalog';
+  import { renderSalePrice } from '../lib/catalog';
   import { orderMessage, readCustomer, saveCustomer, sendOrder } from '../scripts/order';
   import { site } from '../config';
 
@@ -226,7 +226,7 @@ const isActive = (href: string) => path === href.replace(/\/$/, '');
         img.alt = item.label;
         node.querySelector('[data-title]')!.textContent = item.product.name;
         node.querySelector('[data-opts]')!.textContent = `${item.line.color} · ${item.line.size}`;
-        node.querySelector('[data-price]')!.textContent = formatPrice(item.product.price);
+        renderSalePrice(node.querySelector<HTMLElement>('[data-price]')!, item.product.price);
         node.querySelector('[data-qty]')!.textContent = String(item.line.qty);
         const dec = node.querySelector<HTMLButtonElement>('[data-dec]')!;
         const inc = node.querySelector<HTMLButtonElement>('[data-inc]')!;
@@ -237,7 +237,7 @@ const isActive = (href: string) => path === href.replace(/\/$/, '');
         return node;
       }),
     );
-    drawer.querySelector('[data-bag-total]')!.textContent = formatPrice(bagTotal(lines));
+    renderSalePrice(drawer.querySelector<HTMLElement>('[data-bag-total]')!, bagTotal(lines));
   }
 
   menuBtn?.addEventListener('click', () => setMenu(menuBtn.getAttribute('aria-expanded') !== 'true'));
@@ -757,7 +757,7 @@ const isActive = (href: string) => path === href.replace(/\/$/, '');
     justify-content: space-between;
   }
 
-  .bag-total strong {
+  .bag-total .price-now {
     font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 500;

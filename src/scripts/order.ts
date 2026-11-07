@@ -2,7 +2,7 @@
  * Builds the WhatsApp order message. Shared by the cart page and the
  * "Order on WhatsApp" button on product pages.
  */
-import { formatPrice } from '../lib/catalog';
+import { formatPrice, originalPrice } from '../lib/catalog';
 export interface OrderLine {
   name: string;
   color: string;
@@ -24,7 +24,7 @@ export function orderMessage(lines: OrderLine[], customer: Customer = {}): strin
   const total = lines.reduce((sum, l) => sum + l.price * l.qty, 0);
   const items = lines.map(
     (l, i) =>
-      `${i + 1}. ${l.name}\n   Colour: ${l.color}\n   Size: ${l.size}\n   Quantity: ${l.qty}\n   Price: ${formatPrice(l.price * l.qty)}`,
+      `${i + 1}. ${l.name}\n   Colour: ${l.color}\n   Size: ${l.size}\n   Quantity: ${l.qty}\n   Price: ${formatPrice(l.price * l.qty)} (50% off ${formatPrice(originalPrice(l.price) * l.qty)})`,
   );
   const who = [
     customer.name && `Name: ${customer.name}`,

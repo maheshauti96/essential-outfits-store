@@ -3,7 +3,8 @@ import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Icon from '../../components/Icon.astro';
 import { products, getCategory, type Product } from '../../data/products';
-import { absoluteUrl, colorLabel, formatPrice, productUrl } from '../../lib/catalog';
+import SalePrice from '../../components/SalePrice.astro';
+import { absoluteUrl, colorLabel, productUrl } from '../../lib/catalog';
 import { phoneDisplay, site } from '../../config';
 
 export const getStaticPaths = (() =>
@@ -95,7 +96,10 @@ const breadcrumbs = {
       <div class="buy">
         <p class="eyebrow gold">{product.name}</p>
         <h1 data-title>{label}</h1>
-        <p class="price">{formatPrice(product.price)}</p>
+        <p class="price">
+          <SalePrice price={product.price} />
+          <span class="price-off">50% off</span>
+        </p>
         <p class="tax">Inclusive of all taxes</p>
 
         <div class="option">

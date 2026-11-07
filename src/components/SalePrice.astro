@@ -1,0 +1,16 @@
+---
+import { formatPrice, originalPrice } from '../lib/catalog';
+
+interface Props {
+  price: number;
+  /** Text before the sale price, such as "From". */
+  prefix?: string;
+}
+
+const { price, prefix } = Astro.props;
+---
+
+<span class="price-pair">
+  <s class="price-was">{formatPrice(originalPrice(price))}</s>
+  <span class="price-now">{prefix ? `${prefix} ` : ''}{formatPrice(price)}</span>
+</span>

@@ -4,14 +4,14 @@ import ProductGrid from '../components/ProductGrid.astro';
 import StockBanner from '../components/StockBanner.astro';
 import { categories, productByCategory } from '../data/products';
 import { looks } from '../data/looks';
-import { formatPrice } from '../lib/catalog';
+import SalePrice from '../components/SalePrice.astro';
 
 const shirts = productByCategory('shirts');
 const trousers = productByCategory('trousers');
 const collections = [
-  { href: '/shirts/', image: categories[0]!.image, title: 'Shirts', sub: `From ${formatPrice(shirts.price)}` },
-  { href: '/trousers/', image: categories[1]!.image, title: 'Trousers', sub: `From ${formatPrice(trousers.price)}` },
-  { href: '/combinations/', image: '/products/t-bluejeans.jpg', title: 'Style Combinations', sub: 'Complete looks' },
+  { href: '/shirts/', image: categories[0]!.image, title: 'Shirts', price: shirts.price },
+  { href: '/trousers/', image: categories[1]!.image, title: 'Trousers', price: trousers.price },
+  { href: '/combinations/', image: '/products/t-bluejeans.jpg', title: 'Style Combinations' },
 ];
 ---
 
@@ -45,7 +45,13 @@ const collections = [
             <a class="collection" href={c.href}>
               <img src={c.image} alt="" width="800" height="1008" loading="lazy" />
               <span class="collection-caption">
-                <span class="eyebrow gold">{c.sub}</span>
+                {
+                  c.price != null ? (
+                    <SalePrice price={c.price} prefix="From" />
+                  ) : (
+                    <span class="eyebrow gold">Complete looks</span>
+                  )
+                }
                 <span class="collection-title">{c.title}</span>
               </span>
             </a>
@@ -229,6 +235,16 @@ const collections = [
     gap: 4px;
     padding: 24px;
     background: linear-gradient(to top, color-mix(in oklch, var(--ink) 70%, transparent), transparent);
+  }
+
+  .collection .price-was {
+    color: color-mix(in oklch, var(--ink-fg) 72%, transparent);
+  }
+
+  .collection .price-now {
+    color: var(--ink-fg);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .collection-title {
