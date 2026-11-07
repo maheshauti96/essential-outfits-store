@@ -14,6 +14,7 @@ export interface OrderLine {
 
 export interface Customer {
   name?: string;
+  address?: string;
   city?: string;
   pincode?: string;
   notes?: string;
@@ -27,6 +28,7 @@ export function orderMessage(lines: OrderLine[], customer: Customer = {}): strin
   );
   const who = [
     customer.name && `Name: ${customer.name}`,
+    customer.address && `Address: ${customer.address}`,
     (customer.city || customer.pincode) &&
       `Deliver to: ${[customer.city, customer.pincode].filter(Boolean).join(' – ')}`,
     customer.notes && `Notes: ${customer.notes}`,

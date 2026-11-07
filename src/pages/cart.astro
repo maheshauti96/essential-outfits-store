@@ -42,6 +42,18 @@ import { formatPrice } from '../lib/catalog';
             <label for="c-name">Name</label>
             <input id="c-name" name="name" autocomplete="name" required maxlength="60" />
           </div>
+          <div class="field">
+            <label for="c-address">Address</label>
+            <textarea
+              id="c-address"
+              name="address"
+              autocomplete="street-address"
+              required
+              rows="3"
+              maxlength="240"
+              placeholder="House, street, area, landmark"
+            ></textarea>
+          </div>
           <div class="two">
             <div class="field">
               <label for="c-city">City</label>
@@ -146,12 +158,14 @@ import { formatPrice } from '../lib/catalog';
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       formError.hidden = true;
-      const invalid = [...form.querySelectorAll<HTMLInputElement>('input')].find((i) => !i.checkValidity());
+      const invalid = [...form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')].find(
+        (field) => !field.checkValidity() || (field.required && !field.value.trim()),
+      );
       if (invalid) {
         formError.textContent =
           invalid.name === 'pincode' && invalid.value
             ? 'Please enter a valid 6-digit PIN code.'
-            : 'Please fill in your name, city and PIN code.';
+            : 'Please fill in your name, address, city and PIN code.';
         formError.hidden = false;
         invalid.focus();
         return;
@@ -161,6 +175,7 @@ import { formatPrice } from '../lib/catalog';
       const data = new FormData(form);
       const message = orderMessage(toOrderLines(lines), {
         name: String(data.get('name') || '').trim(),
+        address: String(data.get('address') || '').trim(),
         city: String(data.get('city') || '').trim(),
         pincode: String(data.get('pincode') || '').trim(),
         notes: String(data.get('notes') || '').trim(),
