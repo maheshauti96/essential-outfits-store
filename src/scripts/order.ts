@@ -44,6 +44,35 @@ export function orderMessage(lines: OrderLine[], customer: Customer = {}): strin
   ].join('\n');
 }
 
+const DETAILS_KEY = 'eo-details';
+
+export function readCustomer(): Customer {
+  try {
+    const raw = sessionStorage.getItem(DETAILS_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : {};
+    if (!parsed || typeof parsed !== 'object') return {};
+    const data = parsed as Record<string, unknown>;
+    const pick = (key: keyof Customer) => (typeof data[key] === 'string' ? data[key] : '');
+    return {
+      name: pick('name'),
+      address: pick('address'),
+      city: pick('city'),
+      pincode: pick('pincode'),
+      notes: pick('notes'),
+    };
+  } catch {
+    return {};
+  }
+}
+
+export function saveCustomer(customer: Customer) {
+  try {
+    sessionStorage.setItem(DETAILS_KEY, JSON.stringify(customer));
+  } catch {
+    /* private mode */
+  }
+}
+
 export function whatsappUrl(number: string, message: string): string {
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }

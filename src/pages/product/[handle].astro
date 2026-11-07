@@ -146,12 +146,7 @@ const breadcrumbs = {
         </div>
 
         <div class="actions">
-          <button class="btn btn-outline" type="button" data-add>Add to Cart</button>
-          <button class="btn" type="button" data-buy>Buy Now</button>
-          <button class="btn btn-wa" type="button" data-wa>
-            <Icon name="chat" size={16} />
-            Buy on WhatsApp
-          </button>
+          <button class="btn btn-block" type="button" data-add>Add to Cart</button>
         </div>
 
         <div class="desc">
@@ -202,11 +197,6 @@ const breadcrumbs = {
 
 <script>
   import { addToCart, MAX_QTY } from '../../scripts/cart';
-  import { resolvedLines, toOrderLines } from '../../scripts/bag';
-  import { orderMessage, sendOrder, type OrderLine } from '../../scripts/order';
-  import { site } from '../../config';
-  import { getProduct } from '../../data/products';
-  import { absoluteUrl, colorLabel, productUrl } from '../../lib/catalog';
 
   const root = document.getElementById('pdp');
   if (root) {
@@ -279,32 +269,6 @@ const breadcrumbs = {
       const label = root!.querySelector('[data-title]')?.textContent || 'Item';
       window.dispatchEvent(new CustomEvent('cart:toast', { detail: `${label} added to bag` }));
       window.dispatchEvent(new CustomEvent('cart:open'));
-    });
-
-    root.querySelector('[data-buy]')?.addEventListener('click', () => {
-      addToCart(currentLine());
-      const lines = resolvedLines();
-      if (lines.length) sendOrder(site.whatsappNumber, orderMessage(toOrderLines(lines)));
-    });
-
-    function selectionMessage(): string | null {
-      const line = currentLine();
-      const product = getProduct(line.slug);
-      if (!product) return null;
-      const order: OrderLine = {
-        name: colorLabel(product.category, line.color),
-        color: line.color,
-        size: line.size,
-        qty: line.qty,
-        price: product.price,
-        url: absoluteUrl(productUrl(product, line.color)),
-      };
-      return orderMessage([order]);
-    }
-
-    root.querySelector('[data-wa]')?.addEventListener('click', () => {
-      const message = selectionMessage();
-      if (message) sendOrder(site.whatsappNumber, message);
     });
   }
 </script>
@@ -467,19 +431,7 @@ const breadcrumbs = {
   }
 
   .actions {
-    display: grid;
-    gap: 12px;
     margin-top: 32px;
-  }
-
-  @media (min-width: 640px) {
-    .actions {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .btn-wa {
-      grid-column: 1 / -1;
-    }
   }
 
   .desc {

@@ -113,7 +113,7 @@ import { formatPrice } from '../lib/catalog';
   import { setQty, clearCart, MAX_QTY, cartCount } from '../scripts/cart';
   import { bagTotal, resolvedLines, toOrderLines } from '../scripts/bag';
   import { formatPrice } from '../lib/catalog';
-  import { orderMessage, sendOrder } from '../scripts/order';
+  import { orderMessage, readCustomer, saveCustomer, sendOrder } from '../scripts/order';
 
   const root = document.querySelector<HTMLElement>('[data-cart-page]');
   if (root) {
@@ -121,6 +121,22 @@ import { formatPrice } from '../lib/catalog';
     const template = root.querySelector<HTMLTemplateElement>('[data-line-template]')!;
     const form = root.querySelector<HTMLFormElement>('[data-checkout]')!;
     const formError = root.querySelector<HTMLElement>('[data-form-error]')!;
+
+    const saved = readCustomer();
+    for (const key of ['name', 'address', 'city', 'pincode', 'notes'] as const) {
+      const field = form.elements.namedItem(key);
+      if ((field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) && saved[key]) field.value = saved[key];
+    }
+    form.addEventListener('input', () => {
+      const data = new FormData(form);
+      saveCustomer({
+        name: String(data.get('name') || '').trim(),
+        address: String(data.get('address') || '').trim(),
+        city: String(data.get('city') || '').trim(),
+        pincode: String(data.get('pincode') || '').trim(),
+        notes: String(data.get('notes') || '').trim(),
+      });
+    });
 
     function render() {
       const lines = resolvedLines();
